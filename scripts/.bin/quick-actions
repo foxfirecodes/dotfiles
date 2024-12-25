@@ -10,8 +10,8 @@ function add_opt {
 
 add_opt "Play/Pause" "playerctl play-pause"
 add_opt "yewtube" "kitty bash -c 'tmux at -t yewtube || tmux new-session -s yewtube yt'"
-add_opt "Switch sound to speakers" "switch-audo-output 'Pebble V3' && notify 'Switched to speakers'"
-add_opt "Switch sound to headphones" "switch-audo-output 'GA102 High Definition Audio Controller' && notify 'Switched to headphones'"
+add_opt "Switch sound to speakers" "switch-audio-output 'Pebble V3' && notify 'Switched to speakers'"
+add_opt "Switch sound to headphones" "switch-audio-output 'Starship/Matisse HD Audio Controller Analog Stereo' && notify 'Switched to headphones'"
 add_opt "SSH into VPS" "ssh-into-vps"
 add_opt "Kill PulseAudio" "pulseaudio -k"
 add_opt "Suspend system" "systemctl suspend"
@@ -32,7 +32,7 @@ if command -v openrgb >/dev/null && [ -d ~/.config/OpenRGB ]; then
   done
 fi
 
-function switch-audo-output {
+function switch-audio-output {
   local description="${1?description missing}"
   local name="$(pactl list sinks | grep "Description: $description" -B1 | head -n1 | awk '{print $2}')"
   if [ -z "$name" ]; then
