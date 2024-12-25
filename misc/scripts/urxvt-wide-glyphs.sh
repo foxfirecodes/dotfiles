@@ -9,7 +9,7 @@ set -ex
 
 PKGBUILD_DIR=urxvt-pkgbuild
 
-[[ -d "$PKGBUILD_DIR" ]] || git clone https://github.com/rayzr522/PKGBUILD-rxvt-unicode-wide.git "$PKGBUILD_DIR"
+[[ -d "$PKGBUILD_DIR" ]] || git clone https://github.com/foxfirecodes/PKGBUILD-rxvt-unicode-wide.git "$PKGBUILD_DIR"
 cd "$PKGBUILD_DIR"
 
 cvs -z3 -d :pserver:anonymous@cvs.schmorp.de/schmorpforge co rxvt-unicode

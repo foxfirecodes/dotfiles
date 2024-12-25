@@ -9,7 +9,7 @@
 	url = https://github.com/zdharma-continuum/history-search-multi-word
 [submodule "conky:now-clocking"]
 	path = conky/.config/conky/now-clocking
-	url = https://github.com/rayzr522/now-clocking.git
+	url = https://github.com/foxfirecodes/now-clocking.git
 [submodule "tmux:tpm"]
 	path = tmux/.config/tmux/plugins/tpm
 	url = https://github.com/tmux-plugins/tpm
