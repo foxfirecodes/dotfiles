@@ -1,0 +1,7 @@
+#!/bin/bash
+
+query="${1?usage: mullvadgrep <query>}"
+pgrep "$query" | while read -r pid; do
+  mullvad split-tunnel add "$pid"
+done
+
