@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# source: https://github.com/flameshot-org/flameshot/discussions/2060
+
+# get the window ID
+TMP_WINDOW_ID=$(xdotool selectwindow)
+unset WINDOW X Y WIDTH HEIGHT SCREEN
+eval $(xdotool getwindowgeometry --shell "${TMP_WINDOW_ID}")
+# Put the window in focus
+xdotool windowfocus --sync "${TMP_WINDOW_ID}"
+sleep 0.05
+# run flameshot in gui mode in the desired coordinates
+flameshot gui --region "${WIDTH}x${HEIGHT}+${X}+${Y}"
