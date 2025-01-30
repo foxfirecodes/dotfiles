@@ -100,3 +100,27 @@ function mkscript {
         chmod +x "$1"
     fi
 }
+
+function ai-digest {
+    local out="$(mktemp)"
+    bunx ai-digest -o "$out" "$@"
+    pbcopy < "$out"
+}
+
+function clone {
+    local repo="${1?missing repo name}"
+    local repo_name="$(echo "$repo" | sed -e 's;git@github.com:.\+/\(.\+\);\1;g' -e 's;https://github.com/.\+/\(.\+\);\1;g' -e 's;\.git$;;g')"
+    local repos_dir="$HOME/code"
+    mkdir -p "$repos_dir"
+    local out_path="$repos_dir/$repo_name"
+    if echo "$repo_name" | grep -q /; then
+        echo "warning: could not detect repo name" >&1
+    elif [ -d "$out_path" ]; then
+        echo "note: already cloned" >&1
+        cd "$out_path"
+    else
+        git clone "$repo" "$out_path"
+        cd "$out_path"
+    fi
+
+}
