@@ -27,7 +27,11 @@ alias get='wget --content-disposition'
 # }}}
 
 # Sane defaults {{{
-alias ls='ls --color=auto --group-directories-first'
+if [ "$(uname)" = Darwin ]; then
+  alias ls='ls --color=auto'
+else
+  alias ls='ls --color=auto --group-directories-first'
+fi
 alias ll='ls -lahF'
 # }}}
 

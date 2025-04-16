@@ -18,7 +18,7 @@ setopt appendhistory
 autoload -Uz zmv
 
 function _zsh_chpwd_ls {
-  ls -F --group-directories-first --color=auto
+  ls -F
 }
 
 autoload -Uz add-zsh-hook
