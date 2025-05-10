@@ -122,5 +122,12 @@ function clone {
         git clone "$repo" "$out_path"
         cd "$out_path"
     fi
+}
 
+function mkcd {
+    if [ -z "$1" ]; then
+        echo "usage: mkcd <path>" >&1
+        return 1
+    fi
+    mkdir -p "$1" && cd "$1"
 }
