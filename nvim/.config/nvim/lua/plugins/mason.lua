@@ -9,34 +9,27 @@ return {
     opts = {
       -- Make sure to use the names found in `:Mason`
       ensure_installed = {
-        "lua-language-server",
-        "typescript-language-server",
-        "vue-language-server",
-        "json-lsp",
-        "yaml-language-server",
-        "emmet-language-server",
         "biome",
-        "prettier",
       },
     },
   },
   {
     -- yoinked from https://github.com/OneOfOne/dotfiles/blob/master/.config/nvim/lua/plugins/code.lua
-    'nvimtools/none-ls.nvim',
+    "nvimtools/none-ls.nvim",
     opts = function(_, opts)
-      local nls = require('null-ls').builtins
+      local nls = require("null-ls").builtins
       opts.sources = { --override lazyvim's default sources
         -- ts
-        nls.formatting.biome.with({
+        nls.formatting.biome.with {
           filetypes = {
-            'javascript',
-            'javascriptreact',
-            'json',
-            'jsonc',
-            'typescript',
-            'typescriptreact',
-            'css',
-            'vue',
+            "javascript",
+            "javascriptreact",
+            "json",
+            "jsonc",
+            "typescript",
+            "typescriptreact",
+            "css",
+            "vue",
           },
           -- args = {
           --   'check',
@@ -47,15 +40,11 @@ return {
           --   '--skip-errors',
           --   '--stdin-file-path=$FILENAME',
           -- },
-          condition = function(utils)
-            return utils.root_has_file({ "biome.json" })
-          end,
-        }),
-        nls.formatting.prettier.with({
-          condition = function(utils)
-            return utils.root_has_file({ ".prettierrc" })
-          end,
-        }),
+          condition = function(utils) return utils.root_has_file { "biome.json" } end,
+        },
+        nls.formatting.prettierd.with {
+          condition = function(utils) return utils.root_has_file { ".prettierrc" } end,
+        },
       }
       -- opts.debug = true
       return opts
