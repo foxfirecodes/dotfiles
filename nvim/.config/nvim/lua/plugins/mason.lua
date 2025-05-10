@@ -1,26 +1,24 @@
+-- Customize Mason
+
 ---@type LazySpec
 return {
+  -- use mason-tool-installer for automatically installing Mason packages
   {
-    "williamboman/mason-lspconfig.nvim",
-    opts = function(_, opts)
-      opts.ensure_installed = require("astrocore").list_insert_unique(opts.ensure_installed, {
-        "lua_ls",
-        "ts_ls",
-        "volar",
-        "jsonls",
-        "yamlls",
-        "emmet_language_server",
-      })
-    end,
-  },
-  {
-    "jay-babu/mason-null-ls.nvim",
-    opts = function(_, opts)
-      opts.ensure_installed = require("astrocore").list_insert_unique(opts.ensure_installed, {
+    "WhoIsSethDaniel/mason-tool-installer.nvim",
+    -- overrides `require("mason-tool-installer").setup(...)`
+    opts = {
+      -- Make sure to use the names found in `:Mason`
+      ensure_installed = {
+        "lua-language-server",
+        "typescript-language-server",
+        "vue-language-server",
+        "json-lsp",
+        "yaml-language-server",
+        "emmet-language-server",
         "biome",
         "prettier",
-      })
-    end,
+      },
+    },
   },
   {
     -- yoinked from https://github.com/OneOfOne/dotfiles/blob/master/.config/nvim/lua/plugins/code.lua
@@ -63,15 +61,4 @@ return {
       return opts
     end,
   },
-  -- {
-  --   "jay-babu/mason-nvim-dap.nvim",
-  --   -- overrides `require("mason-nvim-dap").setup(...)`
-  --   opts = function(_, opts)
-  --     -- add more things to the ensure_installed table protecting against community packs modifying it
-  --     opts.ensure_installed = require("astrocore").list_insert_unique(opts.ensure_installed, {
-  --       "python",
-  --       -- add more arguments for adding more debuggers
-  --     })
-  --   end,
-  -- },
 }
