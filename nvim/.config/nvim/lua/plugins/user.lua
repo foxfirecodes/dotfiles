@@ -3,10 +3,6 @@ vim.g.wordmotion_prefix = ','
 ---@type LazySpec
 return {
   {
-    "folke/tokyonight.nvim",
-    opts = { style = "night" },
-  },
-  {
     "axelvc/template-string.nvim",
     ft = { "javascript", "typescript", "javascriptreact", "typescriptreact", "vue" },
     config = function()
@@ -50,19 +46,9 @@ return {
       },
       debounce = 200
     },
+    { "chaoren/vim-wordmotion", lazy = false },
+    { "tpope/vim-abolish", lazy = false },
+    { "tpope/vim-surround", lazy = false },
+    { "wellle/targets.vim", lazy = false },
   },
-  { "chaoren/vim-wordmotion", lazy = false },
-  { "tpope/vim-abolish", lazy = false },
-  { "tpope/vim-surround", lazy = false },
-  { "wellle/targets.vim", lazy = false },
-  -- {
-  --   "danymat/neogen",
-  --   config = function()
-  --     require("neogen").setup({
-  --       languages = {
-  --         ["svelte"] = require("neogen.configurations.javascript")
-  --       }
-  --     })
-  --   end
-  -- },
 }

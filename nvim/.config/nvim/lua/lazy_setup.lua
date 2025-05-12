@@ -1,7 +1,7 @@
 require("lazy").setup({
   {
     "AstroNvim/AstroNvim",
-    version = "^4", -- Remove version tracking to elect for nighly AstroNvim
+    version = "^5", -- Remove version tracking to elect for nightly AstroNvim
     import = "astronvim.plugins",
     opts = { -- AstroNvim options must be set here with the `import` key
       mapleader = " ", -- This ensures the leader key must be configured before Lazy is set up
@@ -13,39 +13,9 @@ require("lazy").setup({
   },
   { import = "community" },
   { import = "plugins" },
-    { "folke/tokyonight.nvim", },
-    {
-      "axelvc/template-string.nvim",
-      ft = { "javascript", "typescript", "javascriptreact", "typescriptreact" },
-      config = function()
-        require("template-string").setup({})
-      end
-    },
-    {
-      "rayzr522/diagnostic-filter.nvim",
-      ft = { "javascript", "typescript", "javascriptreact", "typescriptreact" },
-      config = function()
-        require('diagnostic-filter').setup({
-          diagnostic_filters = {
-            ["eslint_d"] = { "^Error: No ESLint configuration found in .*$" }
-          }
-        })
-      end
-    },
-    {
-      "danymat/neogen",
-      config = function()
-        require("neogen").setup({
-          languages = {
-            ["svelte"] = require("neogen.configurations.javascript")
-          }
-        })
-      end
-    },
-
 } --[[@as LazySpec]], {
   -- Configure any other `lazy.nvim` configuration options here
-  install = { colorscheme = { "tokyonight", "astrodark", "habamax" } },
+  install = { colorscheme = { "astrotheme", "habamax" } },
   ui = { backdrop = 100 },
   performance = {
     rtp = {
