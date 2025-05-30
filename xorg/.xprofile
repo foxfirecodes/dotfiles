@@ -39,8 +39,5 @@ elif [[ "$XDG_CURRENT_DESKTOP" = XFCE ]]; then
     try_exec ~/.bin/cycle-wallpapers
 fi
 
-(sleep 3 && {
-    xrdb -I "$HOME" -merge ~/.Xresources
-    try_exec ~/.bin/conky-start
-}) &
-
+xrdb -I "$HOME" -merge ~/.Xresources
+( sleep 5 && try_exec ~/.bin/conky-start ) &; disown
