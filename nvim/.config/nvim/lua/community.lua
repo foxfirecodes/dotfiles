@@ -6,6 +6,7 @@ return {
   { import = "astrocommunity.pack.yaml" },
   { import = "astrocommunity.pack.lua" },
   { import = "astrocommunity.pack.typescript" },
+  { import = "astrocommunity.pack.tailwindcss" },
   { import = "astrocommunity.pack.vue" },
   { import = "astrocommunity.pack.rust" },
   -- import/override with your plugins folder
