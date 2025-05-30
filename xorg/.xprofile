@@ -6,7 +6,7 @@ has() {
 }
 
 try_exec() {
-    if has "$1"; then
+    if has "$1" || [ -x "$1" ]; then
         exec "$@" &
     fi
 }
@@ -35,10 +35,12 @@ elif [[ "$XDG_CURRENT_DESKTOP" =~ .*:GNOME ]]; then
         try_exec tint2
         try_exec xbindkeys -p -f ~/.config/xbindkeysrc
     fi
+elif [[ "$XDG_CURRENT_DESKTOP" = XFCE ]]; then
+    try_exec ~/.bin/cycle-wallpapers
 fi
 
-# hacky way to wait til desktop loads
-(sleep 5 && {
+(sleep 3 && {
     xrdb -I "$HOME" -merge ~/.Xresources
     try_exec ~/.bin/conky-start
 }) &
+
