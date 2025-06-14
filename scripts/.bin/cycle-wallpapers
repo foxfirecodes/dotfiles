@@ -1,3 +1,9 @@
 #!/bin/bash
 
-feh --bg-fill --randomize ~/Pictures/Wallpapers/*
+if [ -n "$(pgrep swww-daemon)" ]; then
+  wallpapers=(~/Pictures/Wallpapers/*)
+  wallpaper="${wallpapers[RANDOM % ${#wallpapers[@]}]}"
+  swww img --transition-type wipe --transition-angle 30 --transition-duration 1 --transition-fps 144 "$wallpaper"
+else
+  feh --bg-fill --randomize ~/Pictures/Wallpapers/*
+fi
