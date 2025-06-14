@@ -9,22 +9,14 @@ function add_opt {
 }
 
 add_opt "Play/Pause" "playerctl play-pause"
-add_opt "yewtube" "kitty bash -c 'tmux at -t yewtube || tmux new-session -s yewtube yt'"
 add_opt "Switch sound to speakers" "switch-audio-output 'Pebble V3' && notify 'Switched to speakers'"
 add_opt "Switch sound to headphones" "switch-audio-output 'Starship/Matisse HD Audio Controller Analog Stereo' && notify 'Switched to headphones'"
-add_opt "SSH into VPS" "ssh-into-vps"
-add_opt "Kill PulseAudio" "pulseaudio -k"
 add_opt "Suspend system" "systemctl suspend"
 add_opt "Allow Plex through Mullvad" "mullvad-exclude-plex"
 add_opt "Allow Jellyfin through Mullvad" "mullvad-exclude-jellyfin"
 
-# add_opt "Fix webcam" "fix-webcam"
-# add_opt "Screenshot Area" "$HOME/.bin/quick-screenshot"
-
-if command -v cpufreq-info >/dev/null; then
-  for governer in $(cpufreq-info -g); do
-    add_opt "CPU Mode: $governer" "set-cpu-mode $governer"
-  done
+if command -v pulseaudio >/dev/null; then
+  add_opt "Kill PulseAudio" "pulseaudio -k"
 fi
 
 if command -v openrgb >/dev/null && [ -d ~/.config/OpenRGB ]; then
@@ -32,6 +24,10 @@ if command -v openrgb >/dev/null && [ -d ~/.config/OpenRGB ]; then
     add_opt "openrgb profile: $profile" "openrgb -p $profile"
   done
 fi
+
+function notify {
+  command -v notify-send >/dev/null && notify-send "$@"
+}
 
 function switch-audio-output {
   local description="${1?description missing}"
@@ -43,28 +39,6 @@ function switch-audio-output {
   echo "$description"
   echo "$name"
   pactl set-default-sink "$name"
-}
-
-function ssh-into-vps {
-  kitty tmux new-session 'exec ssh infra-2'
-}
-
-function fix-webcam {
-  urxvt -geometry 30x5 -e "$HOME/.bin/fix-webcam"
-}
-
-function sudoask {
-  SUDO_ASKPASS="$HOME/.bin/askpass-secret-tool" sudo -A "$@"
-}
-
-function notify {
-  command -v notify-send >/dev/null && notify-send "$@"
-}
-
-function set-cpu-mode {
-  local mode="$1"
-  sudoask cpufreq-set -g "$mode"
-  notify -t 3000 -i system-settings "CPU mode changed" "Now set to $mode"
 }
 
 function mullvad-exclude-plex {
