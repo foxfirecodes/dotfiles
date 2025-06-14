@@ -85,7 +85,11 @@ function mullvad-exclude-jellyfin {
   notify "Excluded $pids Jellyfin PIDs from Mullvad"
 }
 
-action="$(printf '%s\n' "${opts[@]}" | rofi -dmenu -p action -l 5 -i)"
+if [ "$XDG_SESSION_TYPE" = wayland ]; then
+  action="$(printf '%s\n' "${opts[@]}" | wofi -d -p action -L 5 -i)"
+else
+  action="$(printf '%s\n' "${opts[@]}" | rofi -dmenu -p action -l 5 -i)"
+fi
 cmd="${cmds[${action:-none}]}"
 
 if [ -z "$cmd" ]; then
