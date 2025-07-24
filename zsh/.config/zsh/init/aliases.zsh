@@ -9,8 +9,10 @@ alias dotfiles="cd $(realpath "$(dirname "$0")/../../../..")"
 # }}}
 
 # Clipboard {{{
-alias pbcopy='xclip -i -selection clipboard'
-alias pbpaste='xclip -o -selection clipboard'
+if command -v xclip 2>/dev/null; then
+  alias pbcopy='xclip -i -selection clipboard'
+  alias pbpaste='xclip -o -selection clipboard'
+fi
 # }}}
 
 # Confirmation {{{
@@ -54,11 +56,13 @@ alias gbr='git branch -r'
 alias gbd='git branch -vv | grep ": gone" | awk "{print \$1}" | xargs git branch -d'
 alias gbD='gbd -D'
 alias gbc='git branch --show-current'
-alias grh='git reset --hard'
+alias gr='git reset'
+alias grh='gr --hard'
 alias gss='git stash save'
 alias gsp='git stash pop'
 alias grb='git rebase'
 alias gtl='git tag | tr - \~ | sort -V | tr \~ -'
+alias gm='git merge-base main HEAD'
 
 alias tickets='grep -oE "[A-Z]+-[0-9]+"'
 alias jql='xargs | tr " " "," | xargs -I{} echo "id in ({})"'
