@@ -1,23 +1,28 @@
 [user]
 	name = foxfirecodes
 	email = foxfirecodes@gmail.com
-
-[rerere]
-	enabled = true
-[commit]
-	gpgsign = true
-[pull]
-	rebase = false
-
 [core]
 	autocrlf = false
 	pager = delta
 [init]
 	defaultBranch = main
-[interactive]
-  diffFilter = delta --color-only
+[commit]
+	gpgsign = true
+[pull]
+	rebase = true
+[push]
+	autoSetupRemote = true
+[merge]
+	conflictstyle = zdiff3
+[rerere]
+	enabled = true
+[diff]
+	algorithm = histogram
+	colorMoved = default
 [delta]
   navigate = true
+[interactive]
+  diffFilter = delta --color-only
 
 [includeIf "gitdir:~/.local/share/nvim/plugged/"]
 	path = ~/.config/git/env/plugged.gitconfig
