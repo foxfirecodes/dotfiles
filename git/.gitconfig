@@ -8,10 +8,12 @@
 	defaultBranch = main
 [commit]
 	gpgsign = true
-[pull]
-	rebase = true
 [push]
 	autoSetupRemote = true
+[pull]
+	rebase = true
+[rebase]
+	autostash = true
 [merge]
 	conflictstyle = diff3
 [rerere]
