@@ -90,6 +90,15 @@ if [ -z "$TMUX" ]; then
     bindkey '^o' _zsh_tmux_new_pwd
 fi
 
+if command -v lazygit >/dev/null; then
+    function _zsh_lazygit {
+        BUFFER=" lazygit"
+        zle accept-line
+    }
+    zle -N _zsh_lazygit
+    bindkey '^g' _zsh_lazygit
+fi
+
 ### zsh plugins ###
 
 export ZSH_CUSTOM="$HOME/.config/zsh"
