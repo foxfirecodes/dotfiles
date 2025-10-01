@@ -75,6 +75,7 @@ bindkey '^[c' _zsh_copy_buffer
 if [ -z "$TMUX" ]; then
     # if not running in tmux, bind C-a to attach
     function _zsh_tmux_attach {
+        zle push-input
         BUFFER=" tmux at"
         zle accept-line
     }
@@ -83,6 +84,7 @@ if [ -z "$TMUX" ]; then
 
     function _zsh_tmux_new_pwd {
         local session_name="$(basename "$(pwd)")"
+        zle push-input
         BUFFER=" tmux at -t '$session_name' 2>/dev/null || tmux new-session -s '$session_name'"
         zle accept-line
     }
@@ -92,6 +94,7 @@ fi
 
 if command -v lazygit >/dev/null; then
     function _zsh_lazygit {
+        zle push-input
         BUFFER=" lazygit"
         zle accept-line
     }
