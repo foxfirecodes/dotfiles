@@ -23,6 +23,7 @@
 	colorMoved = default
 [delta]
   navigate = true
+  pager = less -S
 [interactive]
   diffFilter = delta --color-only
 
