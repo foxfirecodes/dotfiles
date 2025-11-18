@@ -9,5 +9,6 @@ return {
   { import = "astrocommunity.pack.tailwindcss" },
   { import = "astrocommunity.pack.vue" },
   { import = "astrocommunity.pack.rust" },
+  { import = "astrocommunity.pack.python-ruff" },
   -- import/override with your plugins folder
 }

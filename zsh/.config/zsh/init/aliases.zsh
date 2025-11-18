@@ -9,7 +9,7 @@ alias dotfiles="cd $(realpath "$(dirname "$0")/../../../..")"
 # }}}
 
 # Clipboard {{{
-if command -v xclip 2>/dev/null; then
+if command -v xclip >/dev/null; then
   alias pbcopy='xclip -i -selection clipboard'
   alias pbpaste='xclip -o -selection clipboard'
 fi
