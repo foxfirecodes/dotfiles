@@ -1,5 +1,6 @@
+if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
+
 -- Customize Mason
-print "hello"
 
 ---@type LazySpec
 return {
@@ -13,51 +14,5 @@ return {
         -- "biome",
       },
     },
-  },
-  {
-    -- yoinked from https://github.com/OneOfOne/dotfiles/blob/master/.config/nvim/lua/plugins/code.lua
-    "nvimtools/none-ls.nvim",
-    opts = function(_, opts)
-      print "hello from none-ls-config"
-      local nls = require("null-ls").builtins
-      opts.sources = { --override lazyvim's default sources
-        -- ts
-        -- nls.formatting.biome.with {
-        --   filetypes = {
-        --     "javascript",
-        --     "javascriptreact",
-        --     "json",
-        --     "jsonc",
-        --     "typescript",
-        --     "typescriptreact",
-        --     "css",
-        --     "vue",
-        --   },
-        --   -- args = {
-        --   --   'check',
-        --   --   '--write',
-        --   --   '--unsafe',
-        --   --   '--formatter-enabled=true',
-        --   --   '--organize-imports-enabled=true',
-        --   --   '--skip-errors',
-        --   --   '--stdin-file-path=$FILENAME',
-        --   -- },
-        --   -- condition = function(utils) return utils.root_has_file { "biome.json" } end,
-        --   condition = function(utils)
-        --     print "checking condition for biome"
-        --     return nil
-        --   end,
-        -- },
-        nls.formatting.prettierd.with {
-          -- condition = function(utils) return utils.root_has_file { ".prettierrc" } end,
-          condition = function(utils)
-            print "checking condition for prettierd"
-            return nil
-          end,
-        },
-      }
-      -- opts.debug = true
-      return opts
-    end,
   },
 }
