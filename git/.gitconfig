@@ -29,3 +29,24 @@
 
 [includeIf "gitdir:~/.local/share/nvim/plugged/"]
 	path = ~/.config/git/env/plugged.gitconfig
+[alias]
+	sync = town sync
+	append = town append
+	compress = town compress
+	contribute = town contribute
+	diff-parent = town diff-parent
+	down = town down
+	hack = town hack
+	delete = town delete
+	observe = town observe
+	park = town park
+	prepend = town prepend
+	propose = town propose
+	rename = town rename
+	repo = town repo
+	set-parent = town set-parent
+	ship = town ship
+	up = town up
+[git-town]
+	sync-feature-strategy = rebase
+	sync-tags = false
