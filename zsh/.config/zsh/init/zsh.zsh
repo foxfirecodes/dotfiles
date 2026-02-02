@@ -31,10 +31,10 @@ bindkey -v
 bindkey '^q' push-line
 
 # Enable Ctrl-x-e to edit command line.
-# autoload -Uz edit-command-line
-# zle -N edit-command-line
-# bindkey '^xe' edit-command-line
-# bindkey '^x^e' edit-command-line
+autoload -Uz edit-command-line
+zle -N edit-command-line
+bindkey '^xe' edit-command-line
+bindkey '^x^e' edit-command-line
 
 # Enable ZSH reverse-search with ^R.
 bindkey '^R' history-incremental-search-backward
