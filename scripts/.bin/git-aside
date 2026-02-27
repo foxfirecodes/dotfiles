@@ -1,0 +1,287 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# git-aside: split directories into sparse-checkout worktrees
+
+GIT_DIR=$(git rev-parse --git-dir)
+CONFIG_FILE="$GIT_DIR/info/aside.json"
+EXCLUDE_FILE="$GIT_DIR/info/exclude"
+
+# Ensure config exists
+ensure_config() {
+  if [[ ! -f "$CONFIG_FILE" ]]; then
+    echo '{"splits":{}}' > "$CONFIG_FILE"
+  fi
+}
+
+# Get repo root
+repo_root() {
+  git rev-parse --show-toplevel
+}
+
+# Get default worktree location (sibling to repo)
+default_worktree_path() {
+  local path="$1"
+  local repo_name=$(basename "$(repo_root)")
+  local safe_path=$(echo "$path" | tr '/' '-')
+  echo "$(repo_root)/../${repo_name}-aside/${safe_path}"
+}
+
+cmd_init() {
+  ensure_config
+  echo "Initialized git-aside config at $CONFIG_FILE"
+}
+
+cmd_add() {
+  if [[ $# -lt 2 ]]; then
+    echo "Usage: git aside add <path> <branch> [--worktree <path>]"
+    exit 1
+  fi
+  
+  local path="$1"
+  local branch="$2"
+  shift 2
+  
+  local worktree_path=""
+  
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --worktree) worktree_path="$2"; shift 2 ;;
+      *) echo "Unknown option: $1"; exit 1 ;;
+    esac
+  done
+  
+  ensure_config
+  
+  # Normalize path (remove trailing slash)
+  path="${path%/}"
+  
+  # Check if already split
+  if jq -e ".splits[\"$path\"]" "$CONFIG_FILE" > /dev/null 2>&1; then
+    echo "Error: $path is already split"
+    exit 1
+  fi
+  
+  # Check if path exists and is tracked
+  if [[ ! -d "$(repo_root)/$path" ]]; then
+    echo "Error: $path is not a directory"
+    exit 1
+  fi
+  
+  # Check for uncommitted changes
+  if ! git diff --quiet -- "$path" || ! git diff --cached --quiet -- "$path"; then
+    echo "Error: $path has uncommitted changes. Commit or stash them first."
+    exit 1
+  fi
+  
+  # Set default worktree path
+  if [[ -z "$worktree_path" ]]; then
+    worktree_path=$(default_worktree_path "$path")
+  fi
+  
+  # Create branch if it doesn't exist
+  if ! git rev-parse --verify "$branch" > /dev/null 2>&1; then
+    echo "Creating new branch: $branch"
+    git branch "$branch"
+  fi
+  
+  echo "Splitting $path -> $worktree_path (branch: $branch)"
+  
+  # Create parent directory for worktree
+  mkdir -p "$(dirname "$worktree_path")"
+  
+  # Create worktree with no checkout
+  git worktree add --no-checkout "$worktree_path" "$branch"
+  
+  # Configure sparse checkout in worktree (non-cone mode for precise control)
+  git -C "$worktree_path" sparse-checkout init
+  git -C "$worktree_path" sparse-checkout set "$path"
+  git -C "$worktree_path" checkout
+  
+  # Remove directory and replace with symlink
+  local full_path="$(repo_root)/$path"
+  rm -rf "$full_path"
+  ln -s "$worktree_path/$path" "$full_path"
+  
+  # Mark all files as skip-worktree
+  git ls-files "$path" | xargs -r git update-index --skip-worktree
+  
+  # Add to exclude file
+  if ! grep -qxF "$path" "$EXCLUDE_FILE" 2>/dev/null; then
+    echo "$path" >> "$EXCLUDE_FILE"
+  fi
+  
+  # Update config
+  local tmp=$(mktemp)
+  jq ".splits[\"$path\"] = {\"worktree\": \"$worktree_path\", \"created\": \"$(date -Iseconds)\"}" "$CONFIG_FILE" > "$tmp"
+  mv "$tmp" "$CONFIG_FILE"
+  
+  echo "Done! $path is now split to $worktree_path"
+}
+
+cmd_remove() {
+  local path="${1:?Usage: git aside remove <path>}"
+  path="${path%/}"
+  
+  ensure_config
+  
+  # Get worktree path from config
+  local worktree_path=$(jq -r ".splits[\"$path\"].worktree // empty" "$CONFIG_FILE")
+  if [[ -z "$worktree_path" ]]; then
+    echo "Error: $path is not a split directory"
+    exit 1
+  fi
+  
+  echo "Removing split for $path"
+  
+  # Remove symlink
+  local full_path="$(repo_root)/$path"
+  if [[ -L "$full_path" ]]; then
+    rm "$full_path"
+  fi
+  
+  # Unmark skip-worktree
+  git ls-files "$path" | xargs -r git update-index --no-skip-worktree
+  
+  # Restore files
+  git checkout -- "$path"
+  
+  # Remove from exclude file
+  if [[ -f "$EXCLUDE_FILE" ]]; then
+    local tmp=$(mktemp)
+    grep -vxF "$path" "$EXCLUDE_FILE" > "$tmp" || true
+    mv "$tmp" "$EXCLUDE_FILE"
+  fi
+  
+  # Remove worktree
+  git worktree remove "$worktree_path" --force
+  
+  # Update config
+  local tmp=$(mktemp)
+  jq "del(.splits[\"$path\"])" "$CONFIG_FILE" > "$tmp"
+  mv "$tmp" "$CONFIG_FILE"
+  
+  echo "Done! $path has been restored"
+}
+
+cmd_list() {
+  ensure_config
+  
+  if [[ $(jq '.splits | length' "$CONFIG_FILE") -eq 0 ]]; then
+    echo "No directories are currently split"
+    return
+  fi
+  
+  echo "Split directories:"
+  jq -r '.splits | to_entries[] | "  \(.key) -> \(.value.worktree)"' "$CONFIG_FILE"
+}
+
+cmd_status() {
+  ensure_config
+  
+  if [[ $(jq '.splits | length' "$CONFIG_FILE") -eq 0 ]]; then
+    echo "No directories are currently split"
+    return
+  fi
+  
+  echo "Split directory status:"
+  
+  for path in $(jq -r '.splits | keys[]' "$CONFIG_FILE"); do
+    local worktree_path=$(jq -r ".splits[\"$path\"].worktree" "$CONFIG_FILE")
+    local status=""
+    
+    # Check worktree exists
+    if [[ ! -d "$worktree_path" ]]; then
+      status+=" [worktree missing]"
+    fi
+    
+    # Check symlink exists
+    local full_path="$(repo_root)/$path"
+    if [[ ! -L "$full_path" ]]; then
+      status+=" [symlink missing]"
+    fi
+    
+    # Check skip-worktree is set
+    local non_skipped=$(git ls-files "$path" | while read f; do
+      git ls-files -v "$f" | grep -v '^S' || true
+    done | wc -l)
+    if [[ $non_skipped -gt 0 ]]; then
+      status+=" [skip-worktree incomplete: $non_skipped files]"
+    fi
+    
+    # Check exclude file
+    if ! grep -qxF "$path" "$EXCLUDE_FILE" 2>/dev/null; then
+      status+=" [not in exclude]"
+    fi
+    
+    if [[ -z "$status" ]]; then
+      status=" ✓"
+    fi
+    
+    echo "  $path:$status"
+  done
+}
+
+cmd_repair() {
+  local path="${1:-}"
+  
+  ensure_config
+  
+  local paths
+  if [[ -n "$path" ]]; then
+    paths="$path"
+  else
+    paths=$(jq -r '.splits | keys[]' "$CONFIG_FILE")
+  fi
+  
+  for p in $paths; do
+    echo "Repairing $p..."
+    
+    # Re-apply skip-worktree
+    git ls-files "$p" | xargs -r git update-index --skip-worktree
+    
+    # Ensure in exclude file
+    if ! grep -qxF "$p" "$EXCLUDE_FILE" 2>/dev/null; then
+      echo "$p" >> "$EXCLUDE_FILE"
+    fi
+  done
+  
+  echo "Done!"
+}
+
+cmd_help() {
+  cat <<EOF
+git-aside: split directories into sparse-checkout worktrees
+
+Usage: git aside <command> [options]
+
+Commands:
+  init              Initialize git-aside config
+  add <path> <branch>  Split a directory into its own worktree
+    --worktree <p>       Custom worktree location
+    Branch is created if it doesn't exist.
+  remove <path>     Restore a split directory
+  list              List all split directories
+  status            Show health of all splits
+  repair [<path>]   Fix skip-worktree and exclude for splits
+  help              Show this help
+
+Examples:
+  git aside add .claude claude-config
+  git aside add src/generated codegen --worktree ~/worktrees/generated
+  git aside remove .claude
+  git aside repair
+EOF
+}
+
+# Main dispatch
+case "${1:-help}" in
+  init) cmd_init ;;
+  add) shift; cmd_add "$@" ;;
+  remove) shift; cmd_remove "$@" ;;
+  list) cmd_list ;;
+  status) cmd_status ;;
+  repair) shift; cmd_repair "$@" ;;
+  help|--help|-h) cmd_help ;;
+  *) echo "Unknown command: $1"; cmd_help; exit 1 ;;
+esac
