@@ -45,6 +45,7 @@
 # https://github.com/folke/tokyonight.nvim/blob/main/extras/ghostty/tokyonight_moon
 
 font-family = Monocraft Nerd Font
+keybind = shift+enter=text:\n
 
 palette = 0=#1b1d2b
 palette = 1=#ff757f
