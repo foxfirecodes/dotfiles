@@ -13,3 +13,7 @@ git clone --recursive https://github.com/foxfirecodes/dotfiles.git
 cd dotfiles
 ./setup.sh
 ```
+
+## fonts
+
+https://github.com/IdreesInc/Monocraft (i use the nerdfont version ofc)
