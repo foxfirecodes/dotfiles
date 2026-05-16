@@ -3,10 +3,10 @@ export EDITOR=nvim
 export VISUAL="$EDITOR"
 
 # passwordless sudo via keychain
-if [ "$XDG_SESSION_TYPE" != tty ] && command -v secret-tool >/dev/null; then
-    export SUDO_ASKPASS="$HOME/.bin/askpass-secret-tool"
-    alias sudo="sudo -A"
-fi
+# if [ "$XDG_SESSION_TYPE" != tty ] && command -v secret-tool >/dev/null; then
+#     export SUDO_ASKPASS="$HOME/.bin/askpass-secret-tool"
+#     alias sudo="sudo -A"
+# fi
 
 # fix gpg
 export GPG_TTY=$(tty)
