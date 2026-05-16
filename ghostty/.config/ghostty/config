@@ -46,6 +46,7 @@
 
 font-family = Monocraft Nerd Font
 keybind = shift+enter=text:\n
+bell-features = system
 
 palette = 0=#1b1d2b
 palette = 1=#ff757f
