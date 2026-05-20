@@ -19,3 +19,7 @@ bind -r Tab next-window
 # clipboard shortcuts
 bind -T copy-mode y send-keys -X copy-pipe-and-cancel "xsel -i -p && xsel -o -p | xsel -i -b"
 # bind C-y run "xsel -o | tmux load-buffer - ; tmux paste-buffer"
+
+# fzf session selector
+bind C-s display-popup -E -w 80% -h 70% -T "Sessions" "session=\$(tmux list-sessions -F '#S#{?@bell, *,}' | fzf --prompt='session> ' --no-multi --reverse | sed 's/ *//g') && [ -n \"\$session\" ] && tmux switch-client -t \"\$session\""
+
