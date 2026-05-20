@@ -65,6 +65,8 @@ alias gtl='git tag | tr - \~ | sort -V | tr \~ -'
 alias gm='git merge-base main HEAD'
 alias gcoi='gb | fzf | cut -d "*" -f2- | awk "{print \$1}" | xargs git checkout'
 alias groot='git rev-parse --show-toplevel'
+alias gmct='git status -s | grep -E "^\w\w" | cut -d" " -f2- | xargs git checkout --theirs'
+alias gmcd='git status -s | grep -E "^\w\w" | cut -d" " -f2- | xargs git diff HEAD'
 
 alias tickets='grep -oE "[A-Z]+-[0-9]+"'
 alias jql='xargs | tr " " "," | xargs -I{} echo "id in ({})"'
