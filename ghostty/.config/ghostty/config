@@ -44,7 +44,7 @@
 
 # https://github.com/folke/tokyonight.nvim/blob/main/extras/ghostty/tokyonight_moon
 
-font-family = Monocraft Nerd Font
+font-family = Hurmit Nerd Font
 keybind = shift+enter=text:\n
 bell-features = system
 
