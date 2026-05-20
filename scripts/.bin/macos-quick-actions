@@ -1,0 +1,44 @@
+#!/bin/bash
+
+options=()
+commands=()
+
+function add_option {
+  options+=("$1")
+  commands+=("$2")
+}
+
+function get_command_from_option {
+  for i in $(seq 0 ${#options[@]}); do
+    if [ "${options[$i]}" = "$1" ]; then
+      echo "${commands[$i]}"
+      break
+    fi
+  done
+}
+
+function notify {
+  terminal-notifier -message "$@"
+}
+
+function canary_endpoint {
+  local settings="$HOME/Library/Application Support/discordcanary/settings.json"
+  if grep -q "WEBAPP_ENDPOINT" "$settings"
+  then
+    sed -i="" '/WEBAPP_ENDPOINT/d' "$settings"
+    notify "removed WEBAPP_ENDPOINT"
+  else
+    sed -i="" 's/^{/{\n        "WEBAPP_ENDPOINT": "http:\/\/localhost:3333",/g' "$settings"
+    notify "added WEBAPP_ENDPOINT"
+  fi
+}
+
+
+add_option "Toggle Discord Canary WEBAPP_ENDPOINT" "canary_endpoint"
+
+chosen_option="$(for opt in "${options[@]}"; do echo "$opt"; done | choose)"
+chosen_command="$(get_command_from_option "$chosen_option")"
+
+if [ -n "$chosen_command" ]; then
+  eval "$chosen_command"
+fi
