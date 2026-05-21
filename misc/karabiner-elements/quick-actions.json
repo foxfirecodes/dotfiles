@@ -1,0 +1,25 @@
+{
+  "description": "Quick Actions",
+  "manipulators": [
+    {
+      "from": {
+        "key_code": "backslash",
+        "modifiers": {
+          "mandatory": [
+            "left_shift",
+            "left_command"
+          ],
+          "optional": [
+            "any"
+          ]
+        }
+      },
+      "to": [
+        {
+          "shell_command": "zsh -ic '$HOME/.bin/macos-quick-actions &>! /tmp/quick-actions.log'"
+        }
+      ],
+      "type": "basic"
+    }
+  ]
+}
