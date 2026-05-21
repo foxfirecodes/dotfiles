@@ -169,9 +169,15 @@ function canary_endpoint {
   fi
 }
 
+function images_to_html_table {
+  pbpaste | codex e --skip-git-repo-check -c model=gpt-5.4 -c model_reasoning_effort=low "convert the following into an html table that i can use in the description of a GitHub pull request. return the html without any backtick code fencing or any additional text. here is the content:" | pbcopy
+  notify "converted clipboard contents to an HTML table"
+}
+
 
 add_option "Toggle Discord Canary WEBAPP_ENDPOINT" "canary_endpoint"
 add_option "Watch PR for BugBot" "watch_pr_for_bugbot"
+add_option "Convert clipboard into HTML table" "images_to_html_table"
 
 chosen_option="$(for opt in "${options[@]}"; do echo "$opt"; done | choose)"
 chosen_command="$(get_command_from_option "$chosen_option")"
