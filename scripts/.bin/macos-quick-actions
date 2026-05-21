@@ -21,6 +21,142 @@ function notify {
   terminal-notifier -message "$@"
 }
 
+function notify_with_open {
+  local title="$1"
+  local message="$2"
+  local url="$3"
+  local sound="${4:-default}"
+
+  if command -v terminal-notifier >/dev/null 2>&1; then
+    terminal-notifier -title "$title" -message "$message" -open "$url" -sound "$sound"
+  else
+    osascript -e "display notification \"$message\" with title \"$title\""
+  fi
+}
+
+function play_done_sound {
+  local sound="/System/Library/Sounds/Glass.aiff"
+
+  if [ -f "$sound" ]; then
+    afplay "$sound" >/dev/null 2>&1 &
+  fi
+}
+
+function notify_bugbot_done {
+  local pr_url="$1"
+
+  play_done_sound
+  notify_with_open "BugBot finished" "Click to open the pull request." "$pr_url" "Glass"
+}
+
+function notify_bugbot_watching {
+  local pr_url="$1"
+  local check_name="$2"
+  local check_state="$3"
+
+  notify_with_open "Watching BugBot" "$check_name is $check_state. Checking every 30 seconds." "$pr_url" "Ping"
+}
+
+function github_repo_from_pr_url {
+  local pr_url="$1"
+
+  if [[ "$pr_url" =~ github\.com/([^/]+)/([^/]+)/pull/[0-9]+ ]]; then
+    echo "${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
+  fi
+}
+
+function normalize_github_pr_url {
+  local pr_url="$1"
+
+  if [[ "$pr_url" =~ github\.com/([^/]+)/([^/]+)/pull/([0-9]+) ]]; then
+    echo "https://github.com/${BASH_REMATCH[1]}/${BASH_REMATCH[2]}/pull/${BASH_REMATCH[3]}"
+  fi
+}
+
+function is_active_bugbot_check {
+  local state="$1"
+  local bucket="$2"
+
+  [ "$bucket" = "pending" ] || [ "$bucket" = "PENDING" ] || [ "$state" = "PENDING" ] || [ "$state" = "IN_PROGRESS" ] || [ "$state" = "QUEUED" ] || [ "$state" = "REQUESTED" ] || [ "$state" = "WAITING" ] || [ "$state" = "ACTION_REQUIRED" ]
+}
+
+function bugbot_check_from_pr {
+  local pr_url="$1"
+  local repo="$2"
+
+  gh pr checks "$pr_url" --repo "$repo" --json bucket,link,name,state,workflow --jq '
+    map(select(
+      ((.name // "") | ascii_downcase | contains("bugbot")) or
+      ((.workflow // "") | ascii_downcase | contains("bugbot"))
+    ))
+    | . as $matches
+    | (($matches | map(select(.bucket == "pending")) | .[0]) // $matches[0])
+    | if . == null then empty else [.name, .state, .bucket, .link] | @tsv end
+  ' 2>/dev/null
+}
+
+function watch_bugbot_check_from_pr {
+  local pr_url="$1"
+  local repo="$2"
+  local check_row
+  local check_name
+  local check_state
+  local check_bucket
+  local check_link
+
+  while true; do
+    check_row="$(bugbot_check_from_pr "$pr_url" "$repo")"
+    if [ -z "$check_row" ]; then
+      notify_with_open "BugBot watch failed" "Could not find the BugBot check anymore." "$pr_url" "Basso"
+      return 1
+    fi
+
+    IFS=$'\t' read -r check_name check_state check_bucket check_link <<< "$check_row"
+    if ! is_active_bugbot_check "$check_state" "$check_bucket"; then
+      notify_bugbot_done "$pr_url"
+      return 0
+    fi
+
+    sleep 30
+  done
+}
+
+function watch_pr_for_bugbot {
+  local pr_url
+  local repo
+  local check_row
+  local check_name
+  local check_state
+  local check_bucket
+  local check_link
+  local pasted_url
+
+  pasted_url="$(pbpaste | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/#.*$//')"
+  pr_url="$(normalize_github_pr_url "$pasted_url")"
+  repo="$(github_repo_from_pr_url "$pr_url")"
+
+  if [ -z "$repo" ]; then
+    notify_with_open "BugBot watch failed" "Clipboard does not contain a GitHub pull request URL." "https://github.com" "Basso"
+    return 1
+  fi
+
+  check_row="$(bugbot_check_from_pr "$pr_url" "$repo")"
+  if [ -n "$check_row" ]; then
+    IFS=$'\t' read -r check_name check_state check_bucket check_link <<< "$check_row"
+    if is_active_bugbot_check "$check_state" "$check_bucket"; then
+      notify_bugbot_watching "$pr_url" "$check_name" "$check_state"
+      watch_bugbot_check_from_pr "$pr_url" "$repo"
+      return $?
+    else
+      notify_bugbot_done "$pr_url"
+      return 0
+    fi
+  fi
+
+  notify_with_open "BugBot watch failed" "Could not find a BugBot check for this PR." "$pr_url" "Basso"
+  return 1
+}
+
 function canary_endpoint {
   local settings="$HOME/Library/Application Support/discordcanary/settings.json"
   if grep -q "WEBAPP_ENDPOINT" "$settings"
@@ -35,6 +171,7 @@ function canary_endpoint {
 
 
 add_option "Toggle Discord Canary WEBAPP_ENDPOINT" "canary_endpoint"
+add_option "Watch PR for BugBot" "watch_pr_for_bugbot"
 
 chosen_option="$(for opt in "${options[@]}"; do echo "$opt"; done | choose)"
 chosen_command="$(get_command_from_option "$chosen_option")"
