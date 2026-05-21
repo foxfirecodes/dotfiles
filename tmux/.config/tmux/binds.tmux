@@ -23,3 +23,8 @@ bind -T copy-mode y send-keys -X copy-pipe-and-cancel "xsel -i -p && xsel -o -p 
 # fzf session selector
 bind C-s display-popup -E -w 80% -h 70% -T "Sessions" "session=\$(tmux list-sessions -F '#S#{?@bell, *,}' | fzf --prompt='session> ' --no-multi --reverse | sed 's/ *//g') && [ -n \"\$session\" ] && tmux switch-client -t \"\$session\""
 
+# switch to previous session and kill the original
+bind X confirm-before -p "Kill session #S? (y/n)" "run-shell 'session=#{q:session_name}; tmux switch-client -l && tmux kill-session -t \"\$session\"'"
+
+# zoxide session creator
+bind N display-popup -EE -w 80% -h 70% -T "New Session" "zsh -ic 'zi || exit; default=\${PWD:t}; printf \"session name [%s]: \" \"\$default\"; read -r name; name=\${name:-\$default}; tmux new-session -d -s \"\$name\" -c \"\$PWD\" && tmux switch-client -t \"\$name\"'"
