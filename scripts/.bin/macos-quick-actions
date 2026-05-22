@@ -157,9 +157,15 @@ function watch_pr_for_bugbot {
   return 1
 }
 
+function canary_endpoint_is_enabled {
+  local settings="$HOME/Library/Application Support/discordcanary/settings.json"
+
+  grep -q "WEBAPP_ENDPOINT" "$settings" 2>/dev/null
+}
+
 function canary_endpoint {
   local settings="$HOME/Library/Application Support/discordcanary/settings.json"
-  if grep -q "WEBAPP_ENDPOINT" "$settings"
+  if canary_endpoint_is_enabled
   then
     sed -i="" '/WEBAPP_ENDPOINT/d' "$settings"
     notify "removed WEBAPP_ENDPOINT"
@@ -169,17 +175,26 @@ function canary_endpoint {
   fi
 }
 
+function add_canary_endpoint_option {
+  if canary_endpoint_is_enabled
+  then
+    add_option "Disable WEB_APP in Canary" "canary_endpoint"
+  else
+    add_option "Enable WEB_APP in Canary" "canary_endpoint"
+  fi
+}
+
 function images_to_html_table {
   pbpaste | codex e --skip-git-repo-check -c model=gpt-5.4 -c model_reasoning_effort=low "convert the following into an html table that i can use in the description of a GitHub pull request. return the html without any backtick code fencing or any additional text. here is the content:" | pbcopy
   notify "converted clipboard contents to an HTML table"
 }
 
 
-add_option "Toggle Discord Canary WEBAPP_ENDPOINT" "canary_endpoint"
+add_canary_endpoint_option
 add_option "Watch PR for BugBot" "watch_pr_for_bugbot"
 add_option "Convert clipboard into HTML table" "images_to_html_table"
 
-chosen_option="$(for opt in "${options[@]}"; do echo "$opt"; done | choose)"
+chosen_option="$(for opt in "${options[@]}"; do echo "$opt"; done | choose -b AF52DE)"
 chosen_command="$(get_command_from_option "$chosen_option")"
 
 if [ -n "$chosen_command" ]; then
