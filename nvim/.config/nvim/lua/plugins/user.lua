@@ -46,9 +46,10 @@ return {
       },
       debounce = 200
     },
-    { "chaoren/vim-wordmotion", lazy = false },
-    { "tpope/vim-abolish", lazy = false },
-    { "tpope/vim-surround", lazy = false },
-    { "wellle/targets.vim", lazy = false },
   },
+  { "chaoren/vim-wordmotion", lazy = false },
+  { "tpope/vim-abolish", lazy = false },
+  { "tpope/vim-surround", lazy = false },
+  -- targets.vim disabled: conflicts with AstroNvim's `cin`-prefixed which-key menu
+  -- { "wellle/targets.vim", lazy = false },
 }

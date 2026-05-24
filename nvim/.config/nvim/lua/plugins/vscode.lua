@@ -4,6 +4,7 @@ if not vim.g.vscode then
 end
 
 -- a list of known working plugins with vscode-neovim, update with your own plugins
+-- NOTE: nvim-ts-context-commentstring removed in AstroNvim v6 (built into Neovim v0.11+)
 local plugins = {
   "lazy.nvim",
   "AstroNvim",
@@ -14,7 +15,6 @@ local plugins = {
   "nvim-treesitter",
   "nvim-ts-autotag",
   "nvim-treesitter-textobjects",
-  "nvim-ts-context-commentstring",
 }
 
 local Config = require("lazy.core.config")
@@ -44,9 +44,10 @@ return {
   },
   -- disable colorscheme setting
   { "AstroNvim/astroui", opts = { colorscheme = false } },
-  -- disable treesitter highlighting
+  -- disable treesitter highlighting (treesitter config now lives in AstroCore in v6)
   {
-    "nvim-treesitter/nvim-treesitter",
-    opts = { highlight = { enable = false } },
+    "AstroNvim/astrocore",
+    ---@type AstroCoreOpts
+    opts = { treesitter = { highlight = false } },
   },
 }
