@@ -1,0 +1,48 @@
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY": "1"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(pnpm run *)",
+      "Bash(pnpm install *)",
+      "Bash(pnpm uninstall *)",
+      "Bash(pnpm add *)"
+    ],
+    "deny": [
+      "Bash(git remote *)"
+    ],
+    "defaultMode": "auto"
+  },
+  "model": "opus",
+  "statusLine": {
+    "type": "command",
+    "command": "claude-powerline"
+  },
+  "enabledPlugins": {
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "clangd-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "ralph-loop@claude-plugins-official": true,
+    "fox-loop@foxclaude": true
+  },
+  "extraKnownMarketplaces": {
+    "foxclaude": {
+      "source": {
+        "source": "directory",
+        "path": "/home/foxfire/code/foxclaude"
+      }
+    }
+  },
+  "effortLevel": "high",
+  "tui": "fullscreen",
+  "skipDangerousModePermissionPrompt": true,
+  "editorMode": "normal",
+  "preferredNotifChannel": "terminal_bell",
+  "autoScrollEnabled": true,
+  "inputNeededNotifEnabled": true,
+  "skipAutoPermissionPrompt": true
+}

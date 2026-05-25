@@ -1,0 +1,62 @@
+{
+  "theme": "tokyo-night",
+  "display": {
+    "style": "capsule",
+    "lines": [
+      {
+        "segments": {
+          "directory": {
+            "enabled": true,
+            "style": "basename"
+          },
+          "git": {
+            "enabled": false
+          },
+          "model": {
+            "enabled": true
+          },
+          "session": {
+            "enabled": true,
+            "type": "tokens",
+            "costSource": "calculated"
+          },
+          "today": {
+            "enabled": false
+          },
+          "block": {
+            "enabled": false
+          },
+          "context": {
+            "enabled": true
+          },
+          "metrics": {
+            "enabled": false
+          },
+          "thinking": {
+            "enabled": true,
+            "showEnabled": false,
+            "showEffort": true
+          }
+        }
+      }
+    ]
+  },
+  "budget": {
+    "session": {
+      "warningThreshold": 80
+    },
+    "today": {
+      "warningThreshold": 80,
+      "amount": 50
+    },
+    "block": {
+      "warningThreshold": 80,
+      "amount": 15
+    }
+  },
+  "modelContextLimits": {
+    "default": 200000,
+    "sonnet": 200000,
+    "opus": 200000
+  }
+}
