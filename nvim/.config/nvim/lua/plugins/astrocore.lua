@@ -20,6 +20,14 @@ return {
           end,
         },
       },
+      markdown_wrap = {
+        {
+          event = "FileType",
+          pattern = "markdown",
+          desc = "Enable wrap in markdown files",
+          callback = function() vim.opt_local.wrap = true end,
+        },
+      },
     },
   },
 }
