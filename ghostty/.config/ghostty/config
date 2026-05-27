@@ -45,7 +45,7 @@
 # https://github.com/folke/tokyonight.nvim/blob/main/extras/ghostty/tokyonight_moon
 
 font-family = Hurmit Nerd Font
-keybind = alt+backspace=text:\x1b\x7f
+keybind = shift+enter=text:\n
 bell-features = system
 
 palette = 0=#1b1d2b
