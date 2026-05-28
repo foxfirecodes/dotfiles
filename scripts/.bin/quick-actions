@@ -25,6 +25,10 @@ if command -v openrgb >/dev/null && [ -d ~/.config/OpenRGB ]; then
   done
 fi
 
+if command -v kscreen-doctor >/dev/null; then
+  add_opt "Turn off screen" "kscreen-doctor --dpms off"
+fi
+
 function notify {
   command -v notify-send >/dev/null && notify-send "$@"
 }
