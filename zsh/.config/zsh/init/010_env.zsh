@@ -13,7 +13,6 @@ export GPG_TTY=$(tty)
 
 add_to_path "$HOME/.local/bin"
 add_to_path "$HOME/.bin"
-add_to_path "./node_modules/.bin"
 add_to_path "./target/debug"
 
 if [ -f "/etc/wsl.conf" ]; then
