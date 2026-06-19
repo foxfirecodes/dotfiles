@@ -23,6 +23,9 @@ bind -T copy-mode y send-keys -X copy-pipe-and-cancel "xsel -i -p && xsel -o -p 
 # fzf session selector
 bind C-s display-popup -E -w 80% -h 70% -T "Sessions" "session=\$(tmux list-sessions -F '#{session_last_attached} #{session_name}#{?@bell, *,}' | sort -rn | sed 's/^[0-9]* //' | fzf --prompt='session> ' --no-multi --reverse | sed 's/ [*]$//') && [ -n \"\$session\" ] && tmux switch-client -t \"\$session\""
 
+# switch to previous session
+bind M-- switch-client -l
+
 # switch to previous session and kill the original
 bind X confirm-before -p "Kill session #S? (y/n)" "run-shell 'session=#{q:session_name}; tmux switch-client -l && tmux kill-session -t \"\$session\"'"
 
