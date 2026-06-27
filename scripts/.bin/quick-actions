@@ -25,6 +25,13 @@ if command -v openrgb >/dev/null && [ -d ~/.config/OpenRGB ]; then
   done
 fi
 
+if curl -fsSL http://localhost:27003 ; then
+  openlinkhub_device_id="$(curl -s http://127.0.0.1:27003/api/device/ | jq -r '.device | keys | .[]' | head -n1)"
+  for profile in off rainbow pastelrainbow spiralrainbow pastelspiralrainbow; do
+    add_opt "openlinkhub rgb profile: $profile" "curl 'http://localhost:27003/api/color' --data-raw '{\"deviceId\": \"B07EC37C95904957824CB8D4893324FA\", \"channelId\": -1, \"channelIds\": [], \"profile\": \"$profile\"}'"
+  done
+fi
+
 if command -v kscreen-doctor >/dev/null; then
   add_opt "Turn off screen" "kscreen-doctor --dpms off"
 fi
@@ -64,9 +71,9 @@ function mullvad-exclude-jellyfin {
 }
 
 if [ "$XDG_SESSION_TYPE" = wayland ]; then
-  action="$(printf '%s\n' "${opts[@]}" | wofi -d -p action -L 5 -i)"
+  action="$(printf '%s\n' "${opts[@]}" | wofi -d -M fuzzy -p action -L 4 -i)"
 else
-  action="$(printf '%s\n' "${opts[@]}" | rofi -dmenu -p action -l 5 -i)"
+  action="$(printf '%s\n' "${opts[@]}" | rofi -dmenu -p action -l 6 -i)"
 fi
 cmd="${cmds[${action:-none}]}"
 
