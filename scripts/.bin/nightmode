@@ -1,0 +1,5 @@
+#!/bin/bash
+
+openlinkhub_device_id="$(curl -s http://127.0.0.1:27003/api/device/ | jq -r '.device | keys | .[]' | head -n1)"
+curl 'http://localhost:27003/api/color' --data-raw '{"deviceId": "'"$openlinkhub_device_id"'", "channelId": -1, "channelIds": [], "profile": "off"}'
+openrgb -p stealth
