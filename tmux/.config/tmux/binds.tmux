@@ -7,6 +7,9 @@ set -g mouse on
 unbind C-b
 set -g prefix C-a
 
+# pass the prefix through to a nested tmux (C-a C-a)
+bind C-a send-prefix
+
 # quick detach from tmux
 bind -n C-x detach-client
 
