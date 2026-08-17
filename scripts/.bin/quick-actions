@@ -1,5 +1,17 @@
 #!/bin/bash
 
+terminal=false
+while getopts ":t" opt; do
+  case "$opt" in
+    t) terminal=true ;;
+    *)
+      echo "Usage: $0 [-t]" >&2
+      exit 2
+      ;;
+  esac
+done
+shift $((OPTIND - 1))
+
 declare -A cmds
 declare -a opts
 
@@ -25,7 +37,7 @@ if command -v openrgb >/dev/null && [ -d ~/.config/OpenRGB ]; then
   done
 fi
 
-if curl -fsSL http://localhost:27003 ; then
+if curl -fsSL http://localhost:27003 >/dev/null; then
   openlinkhub_device_id="$(curl -s http://127.0.0.1:27003/api/device/ | jq -r '.device | keys | .[]' | head -n1)"
   for profile in off rainbow pastelrainbow spiralrainbow pastelspiralrainbow; do
     add_opt "openlinkhub rgb profile: $profile" "curl 'http://localhost:27003/api/color' --data-raw '{\"deviceId\": \"$openlinkhub_device_id\", \"channelId\": -1, \"channelIds\": [], \"profile\": \"$profile\"}'"
@@ -70,12 +82,29 @@ function mullvad-exclude-jellyfin {
   notify "Excluded $pids Jellyfin PIDs from Mullvad"
 }
 
-if [ "$XDG_SESSION_TYPE" = wayland ]; then
+if "$terminal"; then
+  printf 'Select an action:\n'
+  for i in "${!opts[@]}"; do
+    printf '%d) %s\n' "$((i + 1))" "${opts[i]}"
+  done
+
+  while true; do
+    read -r -p 'Action number (blank to cancel): ' selection || exit 0
+    [ -z "$selection" ] && exit 0
+
+    if [[ "$selection" =~ ^[0-9]+$ ]] && (( selection >= 1 && selection <= ${#opts[@]} )); then
+      action="${opts[selection - 1]}"
+      break
+    fi
+
+    echo "Please enter a number from 1 to ${#opts[@]}." >&2
+  done
+elif [ "$XDG_SESSION_TYPE" = wayland ]; then
   action="$(printf '%s\n' "${opts[@]}" | wofi -d -M fuzzy -p action -L 4 -i)"
 else
   action="$(printf '%s\n' "${opts[@]}" | rofi -dmenu -p action -l 6 -i)"
 fi
-cmd="${cmds[${action:-none}]}"
+cmd="${cmds["${action:-none}"]}"
 
 if [ -z "$cmd" ]; then
   exit
