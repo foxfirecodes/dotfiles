@@ -12,6 +12,11 @@ alias dotfiles="cd $(realpath "$(dirname "$0")/../../../..")"
 if command -v xclip >/dev/null; then
   alias pbcopy='xclip -i -selection clipboard'
   alias pbpaste='xclip -o -selection clipboard'
+elif [[ -n "$SSH_TTY" || -n "$SSH_CONNECTION" ]]; then
+  # Copy through the terminal emulator when no local clipboard utility exists.
+  pbcopy() {
+    printf '\e]52;c;%s\a' "$(base64 | tr -d '\n')"
+  }
 fi
 # }}}
 
