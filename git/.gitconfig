@@ -50,3 +50,5 @@
 [git-town]
 	sync-feature-strategy = rebase
 	sync-tags = false
+[include]
+	path = /home/foxfire/.gitconfig.local
