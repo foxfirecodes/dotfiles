@@ -20,12 +20,52 @@ function add_opt {
   opts+=( "$1" )
 }
 
+function idle-suspend-is-enabled {
+  local profile action
+  for profile in AC Battery LowBattery; do
+    action="$(kreadconfig6 --file powerdevilrc --group "$profile" --group SuspendAndShutdown --key AutoSuspendAction --default 0)"
+    if [ "$action" != "0" ]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+function toggle-idle-suspend {
+  local profile action
+
+  if idle-suspend-is-enabled; then
+    for profile in AC Battery LowBattery; do
+      action="$(kreadconfig6 --file powerdevilrc --group "$profile" --group SuspendAndShutdown --key AutoSuspendAction --default 0)"
+      kwriteconfig6 --file quick-actionsrc --group IdleSuspendBackup --key "$profile" "$action"
+      kwriteconfig6 --file powerdevilrc --group "$profile" --group SuspendAndShutdown --key AutoSuspendAction 0
+    done
+    notify "Automatic idle suspend disabled" "Your screen-off timeout is unchanged."
+  else
+    for profile in AC Battery LowBattery; do
+      action="$(kreadconfig6 --file quick-actionsrc --group IdleSuspendBackup --key "$profile" --default 1)"
+      kwriteconfig6 --file powerdevilrc --group "$profile" --group SuspendAndShutdown --key AutoSuspendAction "$action"
+    done
+    notify "Automatic idle suspend enabled"
+  fi
+
+  systemctl --user restart plasma-powerdevil.service
+}
+
 add_opt "Play/Pause" "playerctl play-pause"
 add_opt "Switch sound to speakers" "switch-audio-output 'Pebble V3' && notify 'Switched to speakers'"
 add_opt "Switch sound to headphones" "switch-audio-output 'Starship/Matisse HD Audio Controller Analog Stereo' && notify 'Switched to headphones'"
 add_opt "Suspend system" "systemctl suspend"
 add_opt "Allow Plex through Mullvad" "mullvad-exclude-plex"
 add_opt "Allow Jellyfin through Mullvad" "mullvad-exclude-jellyfin"
+
+if command -v kreadconfig6 >/dev/null && command -v kwriteconfig6 >/dev/null && command -v systemctl >/dev/null; then
+  if idle-suspend-is-enabled; then
+    add_opt "Disable automatic idle suspend (keep screen-off)" "toggle-idle-suspend"
+  else
+    add_opt "Enable automatic idle suspend" "toggle-idle-suspend"
+  fi
+fi
 
 if command -v pulseaudio >/dev/null; then
   add_opt "Kill PulseAudio" "pulseaudio -k"
@@ -119,4 +159,3 @@ if [ $? != 0 ]; then
     exit 1
   fi
 fi
-
