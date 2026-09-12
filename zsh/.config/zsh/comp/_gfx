@@ -1,0 +1,1665 @@
+#compdef gfx
+
+autoload -U is-at-least
+
+_gfx_static() {
+    typeset -A opt_args
+    typeset -a _arguments_options
+    local ret=1
+
+    if is-at-least 5.2; then
+        _arguments_options=(-s -S -C)
+    else
+        _arguments_options=(-s -C)
+    fi
+
+    local context curcontext="$curcontext" state line
+    _arguments "${_arguments_options[@]}" : \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'-V[Print version]' \
+'--version[Print version]' \
+":: :_gfx_static_commands" \
+"*::: :->gfx" \
+&& ret=0
+    case $state in
+    (gfx)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:gfx-command-$line[1]:"
+        case $line[1] in
+            (completion)
+_arguments "${_arguments_options[@]}" : \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+':shell:(bash elvish fish powershell zsh)' \
+&& ret=0
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(init)
+_arguments "${_arguments_options[@]}" : \
+'--name=[]:NAME:_default' \
+'--base=[]:BASE:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(add)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--branch=[Target branch; choose interactively when omitted on a terminal]:BRANCH:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'*::paths:_default' \
+&& ret=0
+;;
+(reset)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--branch=[Target branch; required unless a branch is focused]:BRANCH:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'*::paths:_default' \
+&& ret=0
+;;
+(commit)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--branch=[Target branch; choose interactively when omitted on a terminal]:BRANCH:_default' \
+'-m+[]:MESSAGE:_default' \
+'--message=[]:MESSAGE:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(stack)
+_arguments "${_arguments_options[@]}" : \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_gfx_static__subcmd__stack_commands" \
+"*::: :->stack" \
+&& ret=0
+
+    case $state in
+    (stack)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:gfx-stack-command-$line[1]:"
+        case $line[1] in
+            (create)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--name=[Deprecated compatibility option. Stack names are derived from --branch]:NAME:_default' \
+'--branch=[]:BRANCH:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--confirm[Execute after showing the review. Without it, the command is a dry-run]' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(import)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--name=[]:NAME:_default' \
+'--source=[]:LOCAL_BRANCH:_default' \
+'--branch=[New Gitfox-managed branch name]:BRANCH:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(apply)
+_arguments "${_arguments_options[@]}" : \
+'--stack=[]:STACK_ID:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--confirm[Execute after showing the review. Without it, the command is a dry-run]' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(unapply)
+_arguments "${_arguments_options[@]}" : \
+'--stack=[]:STACK_ID:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--confirm[Execute after showing the review. Without it, the command is a dry-run]' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(rename)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--stack=[]:STACK_ID:_default' \
+'--name=[]:NAME:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--confirm[]' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(delete)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--stack=[]:STACK_ID:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--cascade[Required when the stack contains more than one managed branch]' \
+'--confirm[]' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_gfx_static__subcmd__stack__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:gfx-stack-help-command-$line[1]:"
+        case $line[1] in
+            (create)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(import)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(apply)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(unapply)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(rename)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(delete)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(branch)
+_arguments "${_arguments_options[@]}" : \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_gfx_static__subcmd__branch_commands" \
+"*::: :->branch" \
+&& ret=0
+
+    case $state in
+    (branch)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:gfx-branch-command-$line[1]:"
+        case $line[1] in
+            (create)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'(--below)--above=[]:BRANCH_ID:_default' \
+'(--above)--below=[]:BRANCH_ID:_default' \
+'--name=[]:NAME:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--confirm[Execute after showing the review. Without it, the command is a dry-run]' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(import)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--above=[]:BRANCH:_default' \
+'--source=[]:LOCAL_BRANCH:_default' \
+'--name=[New Gitfox-managed branch name]:NAME:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(rename)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--branch=[]:BRANCH_ID:_default' \
+'--name=[]:NAME:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--confirm[]' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(delete)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--branch=[]:BRANCH_ID:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--cascade[Required when the branch has managed descendants]' \
+'--confirm[]' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_gfx_static__subcmd__branch__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:gfx-branch-help-command-$line[1]:"
+        case $line[1] in
+            (create)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(import)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(rename)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(delete)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(draft)
+_arguments "${_arguments_options[@]}" : \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_gfx_static__subcmd__draft_commands" \
+"*::: :->draft" \
+&& ret=0
+
+    case $state in
+    (draft)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:gfx-draft-command-$line[1]:"
+        case $line[1] in
+            (start)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--branch=[]:BRANCH_ID:_default' \
+'--message=[]:MESSAGE:_default' \
+'--after=[Insert after this owned commit instead of the branch tip]:COMMIT:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(start-amend)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--branch=[]:BRANCH_ID:_default' \
+'--commit=[The owned commit whose selected files will be amended]:COMMIT:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(select)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--draft=[]:DRAFT_ID:_default' \
+'*--path=[Repository-relative paths to snapshot]:PATH:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(update)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--draft=[]:DRAFT_ID:_default' \
+'--message=[]:MESSAGE:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(discard)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--draft=[]:DRAFT_ID:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--confirm[Required because discarding permanently removes the private draft snapshot]' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(commit)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--draft=[Draft to finalize; choose interactively when omitted on a terminal]:DRAFT_ID:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--confirm[Execute after showing the review. Without it, the command is a dry-run]' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(amend)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--draft=[]:DRAFT_ID:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--confirm[Execute after showing the review. Without it, the command is a dry-run]' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_gfx_static__subcmd__draft__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:gfx-draft-help-command-$line[1]:"
+        case $line[1] in
+            (start)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(start-amend)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(select)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(update)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(discard)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(commit)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(amend)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(focus)
+_arguments "${_arguments_options[@]}" : \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_gfx_static__subcmd__focus_commands" \
+"*::: :->focus" \
+&& ret=0
+
+    case $state in
+    (focus)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:gfx-focus-command-$line[1]:"
+        case $line[1] in
+            (branch)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--branch=[]:BRANCH_ID:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(commit)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--branch=[]:BRANCH_ID:_default' \
+'--commit=[]:COMMIT:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(workspace)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_gfx_static__subcmd__focus__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:gfx-focus-help-command-$line[1]:"
+        case $line[1] in
+            (branch)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(commit)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(workspace)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(workspace)
+_arguments "${_arguments_options[@]}" : \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+":: :_gfx_static__subcmd__workspace_commands" \
+"*::: :->workspace" \
+&& ret=0
+
+    case $state in
+    (workspace)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:gfx-workspace-command-$line[1]:"
+        case $line[1] in
+            (materialize)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--confirm[Required to execute this protected checkout transition]' \
+'--discard-local-changes[Discard staged and working-copy changes before materializing. This is destructive and is accepted only together with --confirm]' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(leave)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--confirm[Required to execute this protected checkout transition]' \
+'--preserve-native-commits[Preserve a detected native commit chain and restore the pre-Gitfox checkout]' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(recover-native-commits)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--confirm[]' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(replay-native-commits)
+_arguments "${_arguments_options[@]}" : \
+'--workspace=[Workspace name; inferred when unambiguous]:WORKSPACE:_default' \
+'--repo=[Path to the repository. When omitted, Gitfox discovers a repository from the current directory without searching above the user'\''s home]:PATH:_files' \
+'--confirm[]' \
+'--json[Emit stable, machine-readable JSON]' \
+'--allow-dangerous[Publish the reviewed logical operation while leaving HEAD, index, and working files untouched when checkout materialization is unsafe. This still requires the operation'\''s own --confirm and leaves a durable pending-materialization marker for explicit recovery]' \
+'--dry-run[Show a review for commands that support it, without making changes]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_gfx_static__subcmd__workspace__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:gfx-workspace-help-command-$line[1]:"
+        case $line[1] in
+            (materialize)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(leave)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(recover-native-commits)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(replay-native-commits)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_gfx_static__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:gfx-help-command-$line[1]:"
+        case $line[1] in
+            (completion)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(status)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(init)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(add)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(reset)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(commit)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(stack)
+_arguments "${_arguments_options[@]}" : \
+":: :_gfx_static__subcmd__help__subcmd__stack_commands" \
+"*::: :->stack" \
+&& ret=0
+
+    case $state in
+    (stack)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:gfx-help-stack-command-$line[1]:"
+        case $line[1] in
+            (create)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(import)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(apply)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(unapply)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(rename)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(delete)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(branch)
+_arguments "${_arguments_options[@]}" : \
+":: :_gfx_static__subcmd__help__subcmd__branch_commands" \
+"*::: :->branch" \
+&& ret=0
+
+    case $state in
+    (branch)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:gfx-help-branch-command-$line[1]:"
+        case $line[1] in
+            (create)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(import)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(rename)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(delete)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(draft)
+_arguments "${_arguments_options[@]}" : \
+":: :_gfx_static__subcmd__help__subcmd__draft_commands" \
+"*::: :->draft" \
+&& ret=0
+
+    case $state in
+    (draft)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:gfx-help-draft-command-$line[1]:"
+        case $line[1] in
+            (start)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(start-amend)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(select)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(update)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(discard)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(commit)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(amend)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(focus)
+_arguments "${_arguments_options[@]}" : \
+":: :_gfx_static__subcmd__help__subcmd__focus_commands" \
+"*::: :->focus" \
+&& ret=0
+
+    case $state in
+    (focus)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:gfx-help-focus-command-$line[1]:"
+        case $line[1] in
+            (branch)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(commit)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(workspace)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(workspace)
+_arguments "${_arguments_options[@]}" : \
+":: :_gfx_static__subcmd__help__subcmd__workspace_commands" \
+"*::: :->workspace" \
+&& ret=0
+
+    case $state in
+    (workspace)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:gfx-help-workspace-command-$line[1]:"
+        case $line[1] in
+            (materialize)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(leave)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(recover-native-commits)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(replay-native-commits)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+}
+
+(( $+functions[_gfx_static_commands] )) ||
+_gfx_static_commands() {
+    local commands; commands=(
+'completion:Generate a shell completion script. The script includes Gitfox-aware completion for workspace, stack, branch, and local branch selectors' \
+'status:Inspect Gitfox state and working-copy materialization status' \
+'init:Initialize Gitfox state in this repository' \
+'add:Privately stage whole-file snapshots for a branch without changing materialization' \
+'reset:Remove paths from a branch'\''s private staging without changing materialization' \
+'commit:Commit privately staged files to a managed branch' \
+'stack:Manage stacks' \
+'branch:Manage branches within a stack' \
+'draft:Capture and commit whole-file drafts' \
+'focus:Select a branch, commit, or the composed workspace for materialization' \
+'workspace:Recover or leave Gitfox'\''s native checkout' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'gfx commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__add_commands] )) ||
+_gfx_static__subcmd__add_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx add commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__branch_commands] )) ||
+_gfx_static__subcmd__branch_commands() {
+    local commands; commands=(
+'create:' \
+'import:Import an existing local branch above a managed stack tip' \
+'rename:' \
+'delete:' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'gfx branch commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__branch__subcmd__create_commands] )) ||
+_gfx_static__subcmd__branch__subcmd__create_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx branch create commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__branch__subcmd__delete_commands] )) ||
+_gfx_static__subcmd__branch__subcmd__delete_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx branch delete commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__branch__subcmd__help_commands] )) ||
+_gfx_static__subcmd__branch__subcmd__help_commands() {
+    local commands; commands=(
+'create:' \
+'import:Import an existing local branch above a managed stack tip' \
+'rename:' \
+'delete:' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'gfx branch help commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__branch__subcmd__help__subcmd__create_commands] )) ||
+_gfx_static__subcmd__branch__subcmd__help__subcmd__create_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx branch help create commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__branch__subcmd__help__subcmd__delete_commands] )) ||
+_gfx_static__subcmd__branch__subcmd__help__subcmd__delete_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx branch help delete commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__branch__subcmd__help__subcmd__help_commands] )) ||
+_gfx_static__subcmd__branch__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx branch help help commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__branch__subcmd__help__subcmd__import_commands] )) ||
+_gfx_static__subcmd__branch__subcmd__help__subcmd__import_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx branch help import commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__branch__subcmd__help__subcmd__rename_commands] )) ||
+_gfx_static__subcmd__branch__subcmd__help__subcmd__rename_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx branch help rename commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__branch__subcmd__import_commands] )) ||
+_gfx_static__subcmd__branch__subcmd__import_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx branch import commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__branch__subcmd__rename_commands] )) ||
+_gfx_static__subcmd__branch__subcmd__rename_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx branch rename commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__commit_commands] )) ||
+_gfx_static__subcmd__commit_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx commit commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__completion_commands] )) ||
+_gfx_static__subcmd__completion_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx completion commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__draft_commands] )) ||
+_gfx_static__subcmd__draft_commands() {
+    local commands; commands=(
+'start:' \
+'start-amend:' \
+'select:' \
+'update:' \
+'discard:' \
+'commit:' \
+'amend:' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'gfx draft commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__draft__subcmd__amend_commands] )) ||
+_gfx_static__subcmd__draft__subcmd__amend_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx draft amend commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__draft__subcmd__commit_commands] )) ||
+_gfx_static__subcmd__draft__subcmd__commit_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx draft commit commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__draft__subcmd__discard_commands] )) ||
+_gfx_static__subcmd__draft__subcmd__discard_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx draft discard commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__draft__subcmd__help_commands] )) ||
+_gfx_static__subcmd__draft__subcmd__help_commands() {
+    local commands; commands=(
+'start:' \
+'start-amend:' \
+'select:' \
+'update:' \
+'discard:' \
+'commit:' \
+'amend:' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'gfx draft help commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__draft__subcmd__help__subcmd__amend_commands] )) ||
+_gfx_static__subcmd__draft__subcmd__help__subcmd__amend_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx draft help amend commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__draft__subcmd__help__subcmd__commit_commands] )) ||
+_gfx_static__subcmd__draft__subcmd__help__subcmd__commit_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx draft help commit commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__draft__subcmd__help__subcmd__discard_commands] )) ||
+_gfx_static__subcmd__draft__subcmd__help__subcmd__discard_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx draft help discard commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__draft__subcmd__help__subcmd__help_commands] )) ||
+_gfx_static__subcmd__draft__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx draft help help commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__draft__subcmd__help__subcmd__select_commands] )) ||
+_gfx_static__subcmd__draft__subcmd__help__subcmd__select_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx draft help select commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__draft__subcmd__help__subcmd__start_commands] )) ||
+_gfx_static__subcmd__draft__subcmd__help__subcmd__start_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx draft help start commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__draft__subcmd__help__subcmd__start-amend_commands] )) ||
+_gfx_static__subcmd__draft__subcmd__help__subcmd__start-amend_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx draft help start-amend commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__draft__subcmd__help__subcmd__update_commands] )) ||
+_gfx_static__subcmd__draft__subcmd__help__subcmd__update_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx draft help update commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__draft__subcmd__select_commands] )) ||
+_gfx_static__subcmd__draft__subcmd__select_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx draft select commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__draft__subcmd__start_commands] )) ||
+_gfx_static__subcmd__draft__subcmd__start_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx draft start commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__draft__subcmd__start-amend_commands] )) ||
+_gfx_static__subcmd__draft__subcmd__start-amend_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx draft start-amend commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__draft__subcmd__update_commands] )) ||
+_gfx_static__subcmd__draft__subcmd__update_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx draft update commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__focus_commands] )) ||
+_gfx_static__subcmd__focus_commands() {
+    local commands; commands=(
+'branch:' \
+'commit:' \
+'workspace:' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'gfx focus commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__focus__subcmd__branch_commands] )) ||
+_gfx_static__subcmd__focus__subcmd__branch_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx focus branch commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__focus__subcmd__commit_commands] )) ||
+_gfx_static__subcmd__focus__subcmd__commit_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx focus commit commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__focus__subcmd__help_commands] )) ||
+_gfx_static__subcmd__focus__subcmd__help_commands() {
+    local commands; commands=(
+'branch:' \
+'commit:' \
+'workspace:' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'gfx focus help commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__focus__subcmd__help__subcmd__branch_commands] )) ||
+_gfx_static__subcmd__focus__subcmd__help__subcmd__branch_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx focus help branch commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__focus__subcmd__help__subcmd__commit_commands] )) ||
+_gfx_static__subcmd__focus__subcmd__help__subcmd__commit_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx focus help commit commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__focus__subcmd__help__subcmd__help_commands] )) ||
+_gfx_static__subcmd__focus__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx focus help help commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__focus__subcmd__help__subcmd__workspace_commands] )) ||
+_gfx_static__subcmd__focus__subcmd__help__subcmd__workspace_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx focus help workspace commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__focus__subcmd__workspace_commands] )) ||
+_gfx_static__subcmd__focus__subcmd__workspace_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx focus workspace commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help_commands] )) ||
+_gfx_static__subcmd__help_commands() {
+    local commands; commands=(
+'completion:Generate a shell completion script. The script includes Gitfox-aware completion for workspace, stack, branch, and local branch selectors' \
+'status:Inspect Gitfox state and working-copy materialization status' \
+'init:Initialize Gitfox state in this repository' \
+'add:Privately stage whole-file snapshots for a branch without changing materialization' \
+'reset:Remove paths from a branch'\''s private staging without changing materialization' \
+'commit:Commit privately staged files to a managed branch' \
+'stack:Manage stacks' \
+'branch:Manage branches within a stack' \
+'draft:Capture and commit whole-file drafts' \
+'focus:Select a branch, commit, or the composed workspace for materialization' \
+'workspace:Recover or leave Gitfox'\''s native checkout' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'gfx help commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__add_commands] )) ||
+_gfx_static__subcmd__help__subcmd__add_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help add commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__branch_commands] )) ||
+_gfx_static__subcmd__help__subcmd__branch_commands() {
+    local commands; commands=(
+'create:' \
+'import:Import an existing local branch above a managed stack tip' \
+'rename:' \
+'delete:' \
+    )
+    _describe -t commands 'gfx help branch commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__branch__subcmd__create_commands] )) ||
+_gfx_static__subcmd__help__subcmd__branch__subcmd__create_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help branch create commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__branch__subcmd__delete_commands] )) ||
+_gfx_static__subcmd__help__subcmd__branch__subcmd__delete_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help branch delete commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__branch__subcmd__import_commands] )) ||
+_gfx_static__subcmd__help__subcmd__branch__subcmd__import_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help branch import commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__branch__subcmd__rename_commands] )) ||
+_gfx_static__subcmd__help__subcmd__branch__subcmd__rename_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help branch rename commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__commit_commands] )) ||
+_gfx_static__subcmd__help__subcmd__commit_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help commit commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__completion_commands] )) ||
+_gfx_static__subcmd__help__subcmd__completion_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help completion commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__draft_commands] )) ||
+_gfx_static__subcmd__help__subcmd__draft_commands() {
+    local commands; commands=(
+'start:' \
+'start-amend:' \
+'select:' \
+'update:' \
+'discard:' \
+'commit:' \
+'amend:' \
+    )
+    _describe -t commands 'gfx help draft commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__draft__subcmd__amend_commands] )) ||
+_gfx_static__subcmd__help__subcmd__draft__subcmd__amend_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help draft amend commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__draft__subcmd__commit_commands] )) ||
+_gfx_static__subcmd__help__subcmd__draft__subcmd__commit_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help draft commit commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__draft__subcmd__discard_commands] )) ||
+_gfx_static__subcmd__help__subcmd__draft__subcmd__discard_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help draft discard commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__draft__subcmd__select_commands] )) ||
+_gfx_static__subcmd__help__subcmd__draft__subcmd__select_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help draft select commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__draft__subcmd__start_commands] )) ||
+_gfx_static__subcmd__help__subcmd__draft__subcmd__start_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help draft start commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__draft__subcmd__start-amend_commands] )) ||
+_gfx_static__subcmd__help__subcmd__draft__subcmd__start-amend_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help draft start-amend commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__draft__subcmd__update_commands] )) ||
+_gfx_static__subcmd__help__subcmd__draft__subcmd__update_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help draft update commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__focus_commands] )) ||
+_gfx_static__subcmd__help__subcmd__focus_commands() {
+    local commands; commands=(
+'branch:' \
+'commit:' \
+'workspace:' \
+    )
+    _describe -t commands 'gfx help focus commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__focus__subcmd__branch_commands] )) ||
+_gfx_static__subcmd__help__subcmd__focus__subcmd__branch_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help focus branch commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__focus__subcmd__commit_commands] )) ||
+_gfx_static__subcmd__help__subcmd__focus__subcmd__commit_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help focus commit commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__focus__subcmd__workspace_commands] )) ||
+_gfx_static__subcmd__help__subcmd__focus__subcmd__workspace_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help focus workspace commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__help_commands] )) ||
+_gfx_static__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help help commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__init_commands] )) ||
+_gfx_static__subcmd__help__subcmd__init_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help init commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__reset_commands] )) ||
+_gfx_static__subcmd__help__subcmd__reset_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help reset commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__stack_commands] )) ||
+_gfx_static__subcmd__help__subcmd__stack_commands() {
+    local commands; commands=(
+'create:' \
+'import:Import an existing local branch without taking ownership of its ref' \
+'apply:' \
+'unapply:' \
+'rename:' \
+'delete:' \
+    )
+    _describe -t commands 'gfx help stack commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__stack__subcmd__apply_commands] )) ||
+_gfx_static__subcmd__help__subcmd__stack__subcmd__apply_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help stack apply commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__stack__subcmd__create_commands] )) ||
+_gfx_static__subcmd__help__subcmd__stack__subcmd__create_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help stack create commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__stack__subcmd__delete_commands] )) ||
+_gfx_static__subcmd__help__subcmd__stack__subcmd__delete_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help stack delete commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__stack__subcmd__import_commands] )) ||
+_gfx_static__subcmd__help__subcmd__stack__subcmd__import_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help stack import commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__stack__subcmd__rename_commands] )) ||
+_gfx_static__subcmd__help__subcmd__stack__subcmd__rename_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help stack rename commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__stack__subcmd__unapply_commands] )) ||
+_gfx_static__subcmd__help__subcmd__stack__subcmd__unapply_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help stack unapply commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__status_commands] )) ||
+_gfx_static__subcmd__help__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help status commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__workspace_commands] )) ||
+_gfx_static__subcmd__help__subcmd__workspace_commands() {
+    local commands; commands=(
+'materialize:Safely make the selected Gitfox workspace the native HEAD/index/worktree' \
+'leave:Restore the checkout Gitfox captured before its first materialization' \
+'recover-native-commits:Turn a bypassed native commit into unstaged changes for deliberate draft reassignment' \
+'replay-native-commits:Replay bypassed native commits onto a new recovery branch based on the pre-Gitfox HEAD' \
+    )
+    _describe -t commands 'gfx help workspace commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__workspace__subcmd__leave_commands] )) ||
+_gfx_static__subcmd__help__subcmd__workspace__subcmd__leave_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help workspace leave commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__workspace__subcmd__materialize_commands] )) ||
+_gfx_static__subcmd__help__subcmd__workspace__subcmd__materialize_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help workspace materialize commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__workspace__subcmd__recover-native-commits_commands] )) ||
+_gfx_static__subcmd__help__subcmd__workspace__subcmd__recover-native-commits_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help workspace recover-native-commits commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__help__subcmd__workspace__subcmd__replay-native-commits_commands] )) ||
+_gfx_static__subcmd__help__subcmd__workspace__subcmd__replay-native-commits_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx help workspace replay-native-commits commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__init_commands] )) ||
+_gfx_static__subcmd__init_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx init commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__reset_commands] )) ||
+_gfx_static__subcmd__reset_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx reset commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__stack_commands] )) ||
+_gfx_static__subcmd__stack_commands() {
+    local commands; commands=(
+'create:' \
+'import:Import an existing local branch without taking ownership of its ref' \
+'apply:' \
+'unapply:' \
+'rename:' \
+'delete:' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'gfx stack commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__stack__subcmd__apply_commands] )) ||
+_gfx_static__subcmd__stack__subcmd__apply_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx stack apply commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__stack__subcmd__create_commands] )) ||
+_gfx_static__subcmd__stack__subcmd__create_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx stack create commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__stack__subcmd__delete_commands] )) ||
+_gfx_static__subcmd__stack__subcmd__delete_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx stack delete commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__stack__subcmd__help_commands] )) ||
+_gfx_static__subcmd__stack__subcmd__help_commands() {
+    local commands; commands=(
+'create:' \
+'import:Import an existing local branch without taking ownership of its ref' \
+'apply:' \
+'unapply:' \
+'rename:' \
+'delete:' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'gfx stack help commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__stack__subcmd__help__subcmd__apply_commands] )) ||
+_gfx_static__subcmd__stack__subcmd__help__subcmd__apply_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx stack help apply commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__stack__subcmd__help__subcmd__create_commands] )) ||
+_gfx_static__subcmd__stack__subcmd__help__subcmd__create_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx stack help create commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__stack__subcmd__help__subcmd__delete_commands] )) ||
+_gfx_static__subcmd__stack__subcmd__help__subcmd__delete_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx stack help delete commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__stack__subcmd__help__subcmd__help_commands] )) ||
+_gfx_static__subcmd__stack__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx stack help help commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__stack__subcmd__help__subcmd__import_commands] )) ||
+_gfx_static__subcmd__stack__subcmd__help__subcmd__import_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx stack help import commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__stack__subcmd__help__subcmd__rename_commands] )) ||
+_gfx_static__subcmd__stack__subcmd__help__subcmd__rename_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx stack help rename commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__stack__subcmd__help__subcmd__unapply_commands] )) ||
+_gfx_static__subcmd__stack__subcmd__help__subcmd__unapply_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx stack help unapply commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__stack__subcmd__import_commands] )) ||
+_gfx_static__subcmd__stack__subcmd__import_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx stack import commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__stack__subcmd__rename_commands] )) ||
+_gfx_static__subcmd__stack__subcmd__rename_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx stack rename commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__stack__subcmd__unapply_commands] )) ||
+_gfx_static__subcmd__stack__subcmd__unapply_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx stack unapply commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__status_commands] )) ||
+_gfx_static__subcmd__status_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx status commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__workspace_commands] )) ||
+_gfx_static__subcmd__workspace_commands() {
+    local commands; commands=(
+'materialize:Safely make the selected Gitfox workspace the native HEAD/index/worktree' \
+'leave:Restore the checkout Gitfox captured before its first materialization' \
+'recover-native-commits:Turn a bypassed native commit into unstaged changes for deliberate draft reassignment' \
+'replay-native-commits:Replay bypassed native commits onto a new recovery branch based on the pre-Gitfox HEAD' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'gfx workspace commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__workspace__subcmd__help_commands] )) ||
+_gfx_static__subcmd__workspace__subcmd__help_commands() {
+    local commands; commands=(
+'materialize:Safely make the selected Gitfox workspace the native HEAD/index/worktree' \
+'leave:Restore the checkout Gitfox captured before its first materialization' \
+'recover-native-commits:Turn a bypassed native commit into unstaged changes for deliberate draft reassignment' \
+'replay-native-commits:Replay bypassed native commits onto a new recovery branch based on the pre-Gitfox HEAD' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'gfx workspace help commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__workspace__subcmd__help__subcmd__help_commands] )) ||
+_gfx_static__subcmd__workspace__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx workspace help help commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__workspace__subcmd__help__subcmd__leave_commands] )) ||
+_gfx_static__subcmd__workspace__subcmd__help__subcmd__leave_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx workspace help leave commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__workspace__subcmd__help__subcmd__materialize_commands] )) ||
+_gfx_static__subcmd__workspace__subcmd__help__subcmd__materialize_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx workspace help materialize commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__workspace__subcmd__help__subcmd__recover-native-commits_commands] )) ||
+_gfx_static__subcmd__workspace__subcmd__help__subcmd__recover-native-commits_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx workspace help recover-native-commits commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__workspace__subcmd__help__subcmd__replay-native-commits_commands] )) ||
+_gfx_static__subcmd__workspace__subcmd__help__subcmd__replay-native-commits_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx workspace help replay-native-commits commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__workspace__subcmd__leave_commands] )) ||
+_gfx_static__subcmd__workspace__subcmd__leave_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx workspace leave commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__workspace__subcmd__materialize_commands] )) ||
+_gfx_static__subcmd__workspace__subcmd__materialize_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx workspace materialize commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__workspace__subcmd__recover-native-commits_commands] )) ||
+_gfx_static__subcmd__workspace__subcmd__recover-native-commits_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx workspace recover-native-commits commands' commands "$@"
+}
+(( $+functions[_gfx_static__subcmd__workspace__subcmd__replay-native-commits_commands] )) ||
+_gfx_static__subcmd__workspace__subcmd__replay-native-commits_commands() {
+    local commands; commands=()
+    _describe -t commands 'gfx workspace replay-native-commits commands' commands "$@"
+}
+
+if [ "$funcstack[1]" = "_gfx_static" ]; then
+    _gfx_static "$@"
+else
+    compdef _gfx_static gfx
+fi
+
+
+# Gitfox repository-aware values. The generated function above was renamed to
+# _gfx_static; this wrapper calls it for ordinary Clap completion.
+_gfx() {
+  local kind previous current flag item value description
+  previous="${words[CURRENT-1]}"
+  current="${words[CURRENT]}"
+  case "$previous" in
+    --workspace) kind=workspace ;;
+    --stack) kind=stack ;;
+    --branch|--above|--below) kind=branch ;;
+    --draft) kind=draft ;;
+    --source|--base) kind=local-branch ;;
+  esac
+  if [[ -z "$kind" && "$current" == --*=* ]]; then
+    flag="${current%%=*}"
+    case "$flag" in
+      --workspace) kind=workspace ;;
+      --stack) kind=stack ;;
+      --branch|--above|--below) kind=branch ;;
+      --draft) kind=draft ;;
+      --source|--base) kind=local-branch ;;
+    esac
+  fi
+  if [[ -n "$kind" ]]; then
+    # Keep the option prefix out of candidates.  Zsh then filters on and
+    # reinserts the value portion while preserving `--flag=` in the buffer.
+    [[ -n "$flag" ]] && compset -P '*\='
+    local -a raw_candidates candidates
+    raw_candidates=( ${(f)"$(gfx __complete "$kind")"} )
+    candidates=()
+    for item in $raw_candidates; do
+      value="${item%%$'\t'*}"
+      description="${item#*$'\t'}"
+      [[ "$description" == "$item" ]] && description="$kind"
+      candidates+=("$value:$description")
+    done
+    _describe -t values "$kind" candidates
+  else
+    _gfx_static "$@"
+  fi
+}
+if [ "$funcstack[1]" = "_gfx" ]; then
+  _gfx "$@"
+else
+  compdef _gfx gfx
+fi
