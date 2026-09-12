@@ -1,0 +1,64 @@
+#!/bin/sh
+set -eu
+
+die() { printf 'signy: %s\n' "$*" >&2; exit 1; }
+usage() {
+    cat <<'EOF'
+Usage: signy init [base]
+       signy apply
+
+init   Record a signing base for the current branch (default: HEAD), and
+       disable automatic commit signing in this repository. For existing
+       work, supply the commit immediately before the commits to sign.
+apply  Recreate and sign every commit after the recorded base, using Git's
+       configured signing key. Run from a terminal that can unlock it.
+
+Only linear, unpublished history is supported. Fetch before applying:
+publication checks use local remote-tracking refs. No hooks are installed.
+Signing changes commit IDs. The base remains fixed until you run init again.
+EOF
+}
+
+case ${1:-} in
+    -h|--help|help) usage; exit 0 ;;
+    init) [ "$#" -le 2 ] || die 'usage: signy init [base]' ;;
+    apply) [ "$#" -eq 1 ] || die 'usage: signy apply' ;;
+    *) usage >&2; exit 1 ;;
+esac
+
+git rev-parse --show-toplevel >/dev/null 2>&1 || die 'run inside a Git working tree'
+branch=$(git symbolic-ref --quiet --short HEAD) || die 'check out a branch first'
+key="branch.$branch.signyBase"
+for state in rebase-merge rebase-apply MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD sequencer; do
+    [ ! -e "$(git rev-parse --git-path "$state")" ] || die 'finish the current Git operation first'
+done
+
+case $1 in
+    init)
+        base=$(git rev-parse --verify --end-of-options "${2:-HEAD}^{commit}") || die 'base must name an existing commit'
+        git merge-base --is-ancestor "$base" HEAD || die 'base must be an ancestor of HEAD'
+        git config --local "$key" "$base"
+        git config --local commit.gpgSign false
+        printf 'signy: base for %s is %s; automatic signing disabled in this repository\n' "$branch" "$base"
+        ;;
+    apply)
+        base=$(git config --local --get "$key") || die 'run signy init [base] on this branch first'
+        git cat-file -e "$base^{commit}" || die 'recorded base is missing; run init again'
+        git merge-base --is-ancestor "$base" HEAD || die 'branch no longer descends from its signing base; run init again'
+        [ -z "$(git status --porcelain)" ] || die 'commit or stash working-tree changes first'
+        range="$base..HEAD"
+        total=$(git rev-list --count "$range")
+        if [ "$total" -eq 0 ]; then
+            printf 'signy: no commits to sign\n'
+            exit 0
+        fi
+        [ -z "$(git rev-list --merges "$range")" ] || die 'merge commits are not supported'
+        unpublished=$(git rev-list --count "$range" --not --remotes)
+        [ "$total" -eq "$unpublished" ] || die 'range includes commits in remote-tracking history; fetch and init with a newer base'
+        printf 'signy: signing %s commit(s) on %s\n' "$total" "$branch"
+        if ! git -c rebase.updateRefs=false -c rebase.autoStash=false rebase --force-rebase --no-autosquash --gpg-sign "$base"; then
+            die 'signing rebase failed; fix the cause and use git rebase --continue, or git rebase --abort'
+        fi
+        printf 'signy: signed; review and git push when ready\n'
+        ;;
+esac
