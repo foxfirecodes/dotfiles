@@ -3,3 +3,7 @@ keybind = shift+enter=text:\n
 bell-features = system
 
 config-file = ?auto/theme.ghostty
+
+# this works nicely with fastfetch + starship
+window-width = 120
+window-height = 32
