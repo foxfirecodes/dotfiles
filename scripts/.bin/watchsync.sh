@@ -26,7 +26,7 @@ while [[ "$1" =~ --* ]]; do
 done
 
 if [ $# -lt 2 ] || [ -z "$1" ] || [ -z "$2" ]; then
-  echo "USAGE: watchsync.sh <source> <dest>" >&2
+  echo "USAGE: watchsync.sh [--dry-run] [--allow-sensitive] <source> <dest>" >&2
   exit 1
 fi
 
