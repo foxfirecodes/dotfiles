@@ -14,7 +14,7 @@ if command -v xclip >/dev/null; then
   alias pbpaste='xclip -o -selection clipboard'
 elif [[ -n "$SSH_TTY" || -n "$SSH_CONNECTION" ]]; then
   # Copy through the terminal emulator when no local clipboard utility exists.
-  pbcopy() {
+  function pbcopy {
     printf '\e]52;c;%s\a' "$(base64 | tr -d '\n')"
   }
 fi
@@ -90,7 +90,7 @@ alias inspect-docker-context='printf "FROM scratch\n COPY . /" | DOCKER_BUILDKIT
 
 # Quick launchers {{{
 alias vps-stats='ssh vps "TERM=$TERM" ./stats.sh'
-alias note='nvim ~/notes/$(today)-notes.txt'
+alias note='nvim ~/notes/$(today)-notes.md'
 # }}}
 
 # Info commands {{{
