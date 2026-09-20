@@ -1,4 +1,5 @@
 source /usr/share/cachyos-fish-config/cachyos-config.fish
+source (status dirname)/git-aliases.fish
 
 bind ctrl-space accept-autosuggestion
 bind ctrl-o 'tmux at || tmux new-session -s "$(basename "$PWD")"' repaint
