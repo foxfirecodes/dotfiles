@@ -22,10 +22,14 @@ end
 #function fish_greeting
 #    # smth smth
 #end
-/home/foxfire/.local/bin/mise activate fish | source
+
+$HOME/.local/bin/mise activate fish | source
+
+fish_add_path -g $HOME/.cargo/bin
+fish_add_path -g $HOME/.bin
 
 # pnpm
-set -gx PNPM_HOME "/home/foxfire/.local/share/pnpm"
+set -gx PNPM_HOME "$HOME/.local/share/pnpm"
 if not string match -q -- "$PNPM_HOME/bin" $PATH
   set -gx PATH "$PNPM_HOME/bin" $PATH
 end
