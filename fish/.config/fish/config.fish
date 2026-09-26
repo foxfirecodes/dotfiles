@@ -9,6 +9,8 @@ bind ctrl-o 'tmux at || tmux new-session -s "$(basename "$PWD")"' repaint
 bind ctrl-a 'tmux at'
 bind ctrl-a 'tmux at' repaint
 
+$HOME/.local/bin/mise activate fish | source
+
 if type -q zoxide
   zoxide init fish | source
 end
@@ -22,8 +24,6 @@ end
 #function fish_greeting
 #    # smth smth
 #end
-
-$HOME/.local/bin/mise activate fish | source
 
 fish_add_path -g $HOME/.cargo/bin
 fish_add_path -g $HOME/.bin
