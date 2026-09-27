@@ -21,5 +21,8 @@ function tool_installer -a subcmd
             echo "setting daemon.listen to $paseo_daemon_listen"
             paseo daemon config set daemon.listen $paseo_daemon_listen
             return
+        case tailscale
+            curl -fsSL https://tailscale.com/install.sh | sh
+            return
     end
 end
