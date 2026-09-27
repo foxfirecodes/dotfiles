@@ -16,10 +16,7 @@ bind ctrl-a 'tmux at' repaint
 
 set -gx EDITOR nvim
 set -gx VISUAL $EDITOR
-
-if set -q SSH_CONNECTION
-    set -gx GPG_TTY (tty)
-end
+set -gx GPG_TTY (tty)
 
 fish_add_path -g $HOME/.bin
 fish_add_path -g $HOME/.local/bin
