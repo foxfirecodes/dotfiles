@@ -1,3 +1,8 @@
+fundle plugin 'oh-my-fish/plugin-bang-bang'
+fundle plugin 'franciscolourenco/done'
+fundle plugin 'jorgebucaran/autopair.fish'
+fundle init
+
 source (status dirname)/git-aliases.fish
 
 if test -f /usr/share/cachyos-fish-config/cachyos-config.fish
