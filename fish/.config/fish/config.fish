@@ -24,18 +24,21 @@ if type -q starship
   source (starship init fish --print-full-init | psub)
 end
 
-# overwrite greeting
-# potentially disabling fastfetch
-#function fish_greeting
-#    # smth smth
-#end
+set -gx PNPM_HOME "$HOME/.local/share/pnpm"
 
 fish_add_path -g $HOME/.cargo/bin
 fish_add_path -g $HOME/.bin
+fish_add_path -g $PNPM_HOME/bin
 
 # pnpm
-set -gx PNPM_HOME "$HOME/.local/share/pnpm"
 if not string match -q -- "$PNPM_HOME/bin" $PATH
   set -gx PATH "$PNPM_HOME/bin" $PATH
 end
 # pnpm end
+
+function fish_greeting
+  if type -q fastfetch
+    fastfetch --color magenta --logo-color-1 red --logo-color-2 yellow --logo-position right
+  end
+end
+
