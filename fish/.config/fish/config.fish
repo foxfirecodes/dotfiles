@@ -14,7 +14,21 @@ bind ctrl-o 'tmux at || tmux new-session -s "$(basename "$PWD")"' repaint
 bind ctrl-a 'tmux at'
 bind ctrl-a 'tmux at' repaint
 
-$HOME/.local/bin/mise activate fish | source
+set -gx EDITOR nvim
+set -gx VISUAL $EDITOR
+
+fish_add_path -g $HOME/.bin
+fish_add_path -g $HOME/.local/bin
+fish_add_path -g $HOME/.cargo/bin
+
+if test -d $HOME/.local/share/pnpm
+    set -gx PNPM_HOME $HOME/.local/share/pnpm
+    fish_add_path -g $PNPM_HOME/bin
+end
+
+if type -q mise
+    mise activate fish | source
+end
 
 if type -q zoxide
     zoxide init fish | source
@@ -23,18 +37,6 @@ end
 if type -q starship
     source (starship init fish --print-full-init | psub)
 end
-
-set -gx PNPM_HOME "$HOME/.local/share/pnpm"
-
-fish_add_path -g $HOME/.cargo/bin
-fish_add_path -g $HOME/.bin
-fish_add_path -g $PNPM_HOME/bin
-
-# pnpm
-if not string match -q -- "$PNPM_HOME/bin" $PATH
-    set -gx PATH "$PNPM_HOME/bin" $PATH
-end
-# pnpm end
 
 function fish_greeting
     if type -q fastfetch
