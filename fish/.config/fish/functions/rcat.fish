@@ -1,9 +1,9 @@
-function rcat -a file
-    if test -z "$file"
-        echo "usage: rcat <file>"
+function rcat -w rsync
+    if not count $argv >/dev/null
+        echo "usage: rcat <file> [opts]"
     else
         set -l rcat_out (mktemp)
-        rsync -z $file $rcat_out && cat $rcat_out
+        rsync -z $argv $rcat_out && cat $rcat_out
         rm $rcat_out
     end
 end
