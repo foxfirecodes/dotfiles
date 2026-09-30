@@ -8,16 +8,71 @@ Usage: signy init [base]
        signy apply
 
 init   Record a signing base for the current branch (default: HEAD), and
-       disable automatic commit signing in this repository. For existing
-       work, supply the commit immediately before the commits to sign.
+       disable automatic commit signing in this repository. Install a
+       pre-push hook that blocks newly introduced unsigned commits.
+       For existing work, supply the commit before the commits to sign.
 apply  Recreate and sign every commit after the recorded base, using Git's
-       configured signing key. Run from a terminal that can unlock it.
+       configured signing key, then advance the base to the signed HEAD.
+       Also install the hook. Run from a terminal that can unlock the key.
 
 Only linear, unpublished history is supported. Fetch before applying:
-publication checks use local remote-tracking refs. No hooks are installed.
-Signing changes commit IDs. The base remains fixed until you run init again.
+publication checks use local remote-tracking refs. Signing changes commit IDs.
+The hook checks signature presence, not validity or trust, on all pushed refs.
+Existing hooks from other tools are not overwritten.
 EOF
 }
+
+install_pre_push_hook() (
+    hook=$(git rev-parse --path-format=absolute --git-path hooks/pre-push)
+    if [ -e "$hook" ] || [ -L "$hook" ]; then
+        [ -f "$hook" ] && grep -qx '# signy pre-push hook' "$hook" ||
+            die "an existing pre-push hook must be integrated with signy first: $hook"
+    fi
+    mkdir -p "$(dirname "$hook")"
+    hook_tmp=$(mktemp "$hook.signy.XXXXXX")
+    trap 'rm -f "$hook_tmp"' 0
+    cat >"$hook_tmp" <<'HOOK'
+#!/bin/sh
+# signy pre-push hook
+set -eu
+
+die() { printf 'signy: %s\n' "$*" >&2; exit 1; }
+remote_checked=false
+while read -r local_ref local_oid remote_ref remote_oid; do
+    # Deletions introduce no commits; tags pointing to non-commits do not either.
+    case $local_oid in *[!0]*) ;; *) continue ;; esac
+    local_commit=$(git rev-parse --verify "$local_oid^{commit}" 2>/dev/null) || continue
+
+    if [ "$remote_checked" = false ]; then
+        # Use the destination's advertised refs, not possibly stale tracking refs
+        # or signy's base (which advances before the signed commits are pushed).
+        remote_refs=$(git ls-remote -- "$2") || die 'cannot inspect the push destination'
+        exclusions=$(printf '%s\n' "$remote_refs" | while read -r oid ref; do
+            if git rev-parse --verify "$oid^{commit}" >/dev/null 2>&1; then
+                printf '^%s\n' "$oid"
+            fi
+        done)
+        remote_checked=true
+    fi
+    commits=$(git rev-list "$local_commit" --stdin <<EOF
+$exclusions
+EOF
+    ) || die "cannot inspect commits for $remote_ref; fetch the destination and retry"
+    for commit in $commits; do
+        # Restrict the search to commit headers so messages cannot spoof a signature.
+        if ! git cat-file commit "$commit" | awk '
+            /^$/ { body = 1 }
+            !body && /^gpgsig(-sha256)? / { signed = 1 }
+            END { exit !signed }
+        '; then
+            die "push blocked: unsigned commit $commit in $local_ref; run signy apply on that branch (init with an earlier base if needed)"
+        fi
+    done
+done
+HOOK
+    chmod +x "$hook_tmp"
+    mv -f "$hook_tmp" "$hook"
+)
 
 case ${1:-} in
     -h|--help|help) usage; exit 0 ;;
@@ -37,19 +92,21 @@ case $1 in
     init)
         base=$(git rev-parse --verify --end-of-options "${2:-HEAD}^{commit}") || die 'base must name an existing commit'
         git merge-base --is-ancestor "$base" HEAD || die 'base must be an ancestor of HEAD'
+        install_pre_push_hook
         git config --local "$key" "$base"
         git config --local commit.gpgSign false
-        printf 'signy: base for %s is %s; automatic signing disabled in this repository\n' "$branch" "$base"
+        printf 'signy: base for %s is %s; automatic signing disabled; pre-push hook installed\n' "$branch" "$base"
         ;;
     apply)
         base=$(git config --local --get "$key") || die 'run signy init [base] on this branch first'
         git cat-file -e "$base^{commit}" || die 'recorded base is missing; run init again'
         git merge-base --is-ancestor "$base" HEAD || die 'branch no longer descends from its signing base; run init again'
         [ -z "$(git status --porcelain)" ] || die 'commit or stash working-tree changes first'
+        install_pre_push_hook
         range="$base..HEAD"
         total=$(git rev-list --count "$range")
         if [ "$total" -eq 0 ]; then
-            printf 'signy: no commits to sign\n'
+            printf 'signy: no commits to sign; pre-push hook installed\n'
             exit 0
         fi
         [ -z "$(git rev-list --merges "$range")" ] || die 'merge commits are not supported'
@@ -59,6 +116,8 @@ case $1 in
         if ! git -c rebase.updateRefs=false -c rebase.autoStash=false rebase --force-rebase --no-autosquash --gpg-sign "$base"; then
             die 'signing rebase failed; fix the cause and use git rebase --continue, or git rebase --abort'
         fi
-        printf 'signy: signed; review and git push when ready\n'
+        base=$(git rev-parse --verify HEAD)
+        git config --local "$key" "$base"
+        printf 'signy: signed; base for %s advanced to %s; review and git push when ready\n' "$branch" "$base"
         ;;
 esac
