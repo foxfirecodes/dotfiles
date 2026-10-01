@@ -3,6 +3,7 @@
 
 import os
 from pathlib import Path
+import shlex
 import subprocess
 import tempfile
 import unittest
@@ -58,9 +59,9 @@ class SignyTests(unittest.TestCase):
         self.git("remote", "add", "origin", str(self.remote))
         self.git("push", "-q", "origin", "main")
 
-    def run_command(self, *args, cwd=None, succeeds=True):
+    def run_command(self, *args, cwd=None, succeeds=True, text=True):
         result = subprocess.run(
-            args, cwd=cwd or self.repo, env=self.env, text=True, capture_output=True
+            args, cwd=cwd or self.repo, env=self.env, text=text, capture_output=True
         )
         if succeeds:
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
@@ -74,10 +75,10 @@ class SignyTests(unittest.TestCase):
     def signy(self, *args, **kwargs):
         return self.run_command(str(SIGNY), *args, **kwargs)
 
-    def commit(self, signed=False, message=None, cwd=None):
+    def commit(self, signed=False, message=None, cwd=None, filename="work.txt"):
         self.counter += 1
-        (cwd or self.repo).joinpath("work.txt").write_text(f"{self.counter}\n")
-        self.git("add", "work.txt", cwd=cwd)
+        (cwd or self.repo).joinpath(filename).write_text(f"{self.counter}\n")
+        self.git("add", filename, cwd=cwd)
         self.git(
             "commit", "-q", "-S" if signed else "--no-gpg-sign",
             "-m", message or f"commit {self.counter}", cwd=cwd,
@@ -89,6 +90,39 @@ class SignyTests(unittest.TestCase):
             "git", "push", "-q", destination, *refspecs, cwd=cwd, succeeds=False
         )
         self.assertIn("push blocked: unsigned commit", result.stderr)
+
+    def assert_signed_history_preserved(self, original_head, base=None):
+        rewritten = set(self.git(
+            "rev-list", f"{base or self.base}..{original_head}", "--not", "--remotes"
+        ).splitlines())
+        pending = [(original_head, self.git("rev-parse", "HEAD"))]
+        replacements = {}
+        while pending:
+            original, signed = pending.pop()
+            if original not in rewritten:
+                self.assertEqual(signed, original)
+                continue
+            if original in replacements:
+                self.assertEqual(signed, replacements[original])
+                continue
+            replacements[original] = signed
+            self.assertNotEqual(signed, original)
+            self.git("verify-commit", signed)
+            original_raw = self.run_command("git", "cat-file", "commit", original).stdout
+            signed_raw = self.run_command("git", "cat-file", "commit", signed).stdout
+            original_headers, original_message = original_raw.split("\n\n", 1)
+            signed_headers, signed_message = signed_raw.split("\n\n", 1)
+            self.assertEqual(signed_message, original_message)
+            for header in ("tree ", "author ", "committer ", "encoding "):
+                self.assertEqual(
+                    [line for line in signed_headers.splitlines() if line.startswith(header)],
+                    [line for line in original_headers.splitlines() if line.startswith(header)],
+                )
+            original_parents = self.git("show", "-s", "--format=%P", original).split()
+            signed_parents = self.git("show", "-s", "--format=%P", signed).split()
+            self.assertEqual(len(signed_parents), len(original_parents))
+            pending.extend(zip(original_parents, signed_parents))
+        self.assertEqual(set(replacements), rewritten)
 
     def test_apply_advances_base_and_signs_only_new_commits(self):
         self.signy("init")
@@ -123,10 +157,156 @@ class SignyTests(unittest.TestCase):
         self.signy("init")
         unsigned_head = self.commit()
         self.git("config", "user.signingKey", str(self.root / "missing-key"))
-        self.signy("apply", succeeds=False)
+        result = self.signy("apply", succeeds=False)
+        self.assertIn("branch and base unchanged", result.stderr)
         self.assertEqual(self.git("config", "branch.main.signyBase"), self.base)
-        self.git("rebase", "--abort")
         self.assertEqual(self.git("rev-parse", "HEAD"), unsigned_head)
+        self.assertEqual(self.git("status", "--porcelain"), "")
+        self.assertFalse((self.repo / ".git/rebase-merge").exists())
+        self.git("config", "user.signingKey", str(self.signing_key))
+        self.signy("apply")
+        self.git("verify-commit", "HEAD")
+
+    def test_failure_after_one_signature_leaves_branch_and_base_unchanged(self):
+        self.signy("init")
+        self.commit()
+        original_head = self.commit()
+        marker = self.root / "first-signature"
+        signer = self.root / "signer"
+        signer.write_text(
+            "#!/bin/sh\n"
+            f"if [ -e {shlex.quote(str(marker))} ]; then exit 1; fi\n"
+            f"touch {shlex.quote(str(marker))}\n"
+            'exec ssh-keygen "$@"\n'
+        )
+        signer.chmod(0o755)
+        self.git("config", "gpg.ssh.program", str(signer))
+        self.signy("apply", succeeds=False)
+        self.assertTrue(marker.exists())
+        self.assertEqual(self.git("rev-parse", "HEAD"), original_head)
+        self.assertEqual(self.git("config", "branch.main.signyBase"), self.base)
+        self.assertEqual(self.git("status", "--porcelain"), "")
+        self.git("config", "--unset", "gpg.ssh.program")
+        self.signy("apply")
+        self.assert_signed_history_preserved(original_head)
+
+    def test_branch_changes_during_signing_are_not_overwritten(self):
+        self.signy("init")
+        self.commit()
+        original_head = self.commit()
+        signer = self.root / "signer"
+        signer.write_text(
+            "#!/bin/sh\n"
+            f"git update-ref refs/heads/main {self.base}\n"
+            'exec ssh-keygen "$@"\n'
+        )
+        signer.chmod(0o755)
+        self.git("config", "gpg.ssh.program", str(signer))
+        result = self.signy("apply", succeeds=False)
+        self.assertIn("branch changed while signing", result.stderr)
+        self.assertEqual(self.git("rev-parse", "HEAD"), self.base)
+        self.assertEqual(self.git("config", "branch.main.signyBase"), self.base)
+        # The signer only moved the ref; apply never touched the index or files.
+        self.assertEqual(self.git("write-tree"), self.git("rev-parse", f"{original_head}^{{tree}}"))
+        self.assertEqual((self.repo / "work.txt").read_text(), f"{self.counter}\n")
+
+    def test_message_encoding_and_trailing_blank_lines_are_preserved(self):
+        self.signy("init")
+        self.commit()
+        message = self.root / "message"
+        message.write_bytes("café\n\ncommit details\n\n\n".encode("iso-8859-1"))
+        self.git(
+            "-c", "i18n.commitEncoding=ISO-8859-1", "commit", "-q", "--amend",
+            "--no-gpg-sign", "--cleanup=verbatim", "-F", str(message),
+        )
+        original = self.run_command("git", "cat-file", "commit", "HEAD", text=False).stdout
+        self.signy("apply")
+        signed = self.run_command("git", "cat-file", "commit", "HEAD", text=False).stdout
+        self.assertEqual(signed.split(b"\n\n", 1)[1], original.split(b"\n\n", 1)[1])
+        self.assertIn(b"\nencoding ISO-8859-1\n", signed)
+        self.git("verify-commit", "HEAD")
+
+    def test_merge_resolutions_metadata_and_empty_commits_are_preserved(self):
+        self.signy("init")
+        self.git("switch", "-q", "-c", "feature")
+        self.commit(message="feature\n\nA detailed message.")
+        self.git(
+            "commit", "-q", "--amend", "--no-edit", "--no-gpg-sign",
+            "--author", "Another Author <another@example.test>",
+            "--date", "2001-02-03T04:05:06-07:00",
+        )
+        feature_head = self.git("rev-parse", "HEAD")
+        self.git("switch", "-q", "main")
+        self.commit()
+        self.git("merge", "--no-ff", "--no-gpg-sign", "feature", succeeds=False)
+        (self.repo / "work.txt").write_text("manual merge resolution\n")
+        self.git("add", "work.txt")
+        self.git("commit", "-q", "--no-gpg-sign", "-m", "resolved merge")
+        self.git("commit", "-q", "--allow-empty", "--no-gpg-sign", "-m", "empty commit")
+        original_head = self.git("rev-parse", "HEAD")
+        self.assert_push_blocked("main")
+        self.signy("apply")
+        self.assert_signed_history_preserved(original_head)
+        self.assertEqual((self.repo / "work.txt").read_text(), "manual merge resolution\n")
+        self.assertEqual(self.git("rev-parse", "feature"), feature_head)
+        signed_head = self.git("rev-parse", "HEAD")
+        self.signy("apply")
+        self.assertEqual(self.git("rev-parse", "HEAD"), signed_head)
+        self.git("push", "-q", "origin", "main")
+
+    def test_octopus_merge_preserves_parent_order(self):
+        self.signy("init")
+        for branch in ("one", "two"):
+            self.git("switch", "-q", "-c", branch, self.base)
+            self.commit(filename=f"{branch}.txt")
+        self.git("switch", "-q", "main")
+        self.commit()
+        self.git("merge", "-q", "--no-ff", "--no-gpg-sign", "-m", "octopus", "one", "two")
+        original_head = self.git("rev-parse", "HEAD")
+        self.assertEqual(len(self.git("show", "-s", "--format=%P", "HEAD").split()), 3)
+        self.signy("apply")
+        self.assert_signed_history_preserved(original_head)
+        self.git("push", "-q", "origin", "main")
+
+    def test_merge_of_branch_forked_before_signing_base(self):
+        signing_base = self.commit(signed=True)
+        self.signy("init")
+        self.git("switch", "-q", "-c", "feature", self.base)
+        self.commit(filename="feature.txt")
+        self.git("switch", "-q", "main")
+        self.commit()
+        self.git("merge", "-q", "--no-ff", "--no-gpg-sign", "-m", "merge", "feature")
+        original_head = self.git("rev-parse", "HEAD")
+        self.signy("apply")
+        self.assert_signed_history_preserved(original_head, base=signing_base)
+        self.git("push", "-q", "origin", "main")
+
+    def test_published_merge_parent_is_preserved(self):
+        self.signy("init")
+        self.git("switch", "-q", "-c", "upstream")
+        upstream = self.commit(filename="upstream.txt")
+        # Simulate unsigned upstream history published by another contributor.
+        self.git("push", "-q", "--no-verify", "origin", "upstream")
+        self.git("switch", "-q", "main")
+        self.commit()
+        self.git("merge", "-q", "--no-ff", "--no-gpg-sign", "-m", "merge upstream", "upstream")
+        original_head = self.git("rev-parse", "HEAD")
+        result = self.signy("apply")
+        self.assertIn("signing 2 commit(s)", result.stdout)
+        self.assert_signed_history_preserved(original_head)
+        self.assertEqual(self.git("rev-parse", "HEAD^2"), upstream)
+        self.assertEqual(self.git("rev-parse", "origin/upstream"), upstream)
+        self.git("push", "-q", "origin", "main")
+
+    def test_published_branch_history_is_not_rewritten(self):
+        self.signy("init")
+        self.commit(signed=True)
+        self.git("push", "-q", "origin", "main")
+        original_head = self.commit()
+        result = self.signy("apply", succeeds=False)
+        self.assertIn("range includes commits in remote-tracking history", result.stderr)
+        self.assertEqual(self.git("rev-parse", "HEAD"), original_head)
+        self.assertEqual(self.git("config", "branch.main.signyBase"), self.base)
 
     def test_new_branches_tags_urls_and_deletions(self):
         self.signy("init")

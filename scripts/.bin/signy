@@ -11,12 +11,14 @@ init   Record a signing base for the current branch (default: HEAD), and
        disable automatic commit signing in this repository. Install a
        pre-push hook that blocks newly introduced unsigned commits.
        For existing work, supply the commit before the commits to sign.
-apply  Recreate and sign every commit after the recorded base, using Git's
-       configured signing key, then advance the base to the signed HEAD.
+apply  Recreate and sign unpublished commits after the recorded base, using
+       Git's configured signing key, then advance the base to the signed HEAD.
+       Preserve commit contents and merge structure, including resolutions.
        Also install the hook. Run from a terminal that can unlock the key.
 
-Only linear, unpublished history is supported. Fetch before applying:
-publication checks use local remote-tracking refs. Signing changes commit IDs.
+Published merge parents are retained; published branch history is not rewritten.
+Fetch before applying: publication checks use local remote-tracking refs.
+Signing changes commit IDs. A signing failure leaves the branch and base intact.
 The hook checks signature presence, not validity or trust, on all pushed refs.
 Existing hooks from other tools are not overwritten.
 EOF
@@ -74,6 +76,38 @@ HOOK
     mv -f "$hook_tmp" "$hook"
 )
 
+sign_commit() (
+    # Reuse the original tree rather than replaying patches or rerunning merges.
+    # A private directory maps old parent IDs to their signed replacements.
+    git cat-file commit "$1" >"$rewrite_dir/commit" || exit 1
+    tree=$(sed -n '/^$/q; s/^tree //p' "$rewrite_dir/commit") || exit 1
+    parents=$(sed -n '/^$/q; s/^parent //p' "$rewrite_dir/commit") || exit 1
+    author=$(sed -n '/^$/q; s/^author //p' "$rewrite_dir/commit") || exit 1
+    committer=$(sed -n '/^$/q; s/^committer //p' "$rewrite_dir/commit") || exit 1
+    encoding=$(sed -n '/^$/q; s/^encoding //p' "$rewrite_dir/commit") || exit 1
+    sed '1,/^$/d' "$rewrite_dir/commit" >"$rewrite_dir/message" || exit 1
+
+    GIT_AUTHOR_NAME=${author% <*}
+    GIT_AUTHOR_EMAIL=${author#*<}
+    GIT_AUTHOR_EMAIL=${GIT_AUTHOR_EMAIL%%>*}
+    GIT_AUTHOR_DATE="@${author##*> }"
+    GIT_COMMITTER_NAME=${committer% <*}
+    GIT_COMMITTER_EMAIL=${committer#*<}
+    GIT_COMMITTER_EMAIL=${GIT_COMMITTER_EMAIL%%>*}
+    GIT_COMMITTER_DATE="@${committer##*> }"
+    export GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_AUTHOR_DATE
+    export GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL GIT_COMMITTER_DATE
+
+    set -- -S "$tree"
+    for parent in $parents; do
+        if [ -f "$rewrite_dir/$parent" ]; then
+            parent=$(cat "$rewrite_dir/$parent") || exit 1
+        fi
+        set -- "$@" -p "$parent"
+    done
+    git -c "i18n.commitEncoding=${encoding:-UTF-8}" commit-tree "$@" <"$rewrite_dir/message"
+)
+
 case ${1:-} in
     -h|--help|help) usage; exit 0 ;;
     init) [ "$#" -le 2 ] || die 'usage: signy init [base]' ;;
@@ -82,7 +116,8 @@ case ${1:-} in
 esac
 
 git rev-parse --show-toplevel >/dev/null 2>&1 || die 'run inside a Git working tree'
-branch=$(git symbolic-ref --quiet --short HEAD) || die 'check out a branch first'
+branch_ref=$(git symbolic-ref --quiet HEAD) || die 'check out a branch first'
+branch=${branch_ref#refs/heads/}
 key="branch.$branch.signyBase"
 for state in rebase-merge rebase-apply MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD sequencer; do
     [ ! -e "$(git rev-parse --git-path "$state")" ] || die 'finish the current Git operation first'
@@ -103,20 +138,31 @@ case $1 in
         git merge-base --is-ancestor "$base" HEAD || die 'branch no longer descends from its signing base; run init again'
         [ -z "$(git status --porcelain)" ] || die 'commit or stash working-tree changes first'
         install_pre_push_hook
-        range="$base..HEAD"
+        head=$(git rev-parse --verify HEAD)
+        range="$base..$head"
         total=$(git rev-list --count "$range")
         if [ "$total" -eq 0 ]; then
             printf 'signy: no commits to sign; pre-push hook installed\n'
             exit 0
         fi
-        [ -z "$(git rev-list --merges "$range")" ] || die 'merge commits are not supported'
-        unpublished=$(git rev-list --count "$range" --not --remotes)
-        [ "$total" -eq "$unpublished" ] || die 'range includes commits in remote-tracking history; fetch and init with a newer base'
+        # Published side branches may be merge parents, but never rewrite the
+        # branch's published first-parent history. Keep those side commits as-is.
+        mainline=$(git rev-list --count --first-parent "$range")
+        unpublished=$(git rev-list --count --first-parent "$range" --not --remotes)
+        [ "$mainline" -eq "$unpublished" ] || die 'range includes commits in remote-tracking history; fetch and init with a newer base'
+        commits=$(git rev-list --reverse --topo-order "$range" --not --remotes)
+        total=$(git rev-list --count "$range" --not --remotes)
         printf 'signy: signing %s commit(s) on %s\n' "$total" "$branch"
-        if ! git -c rebase.updateRefs=false -c rebase.autoStash=false rebase --force-rebase --no-autosquash --gpg-sign "$base"; then
-            die 'signing rebase failed; fix the cause and use git rebase --continue, or git rebase --abort'
-        fi
-        base=$(git rev-parse --verify HEAD)
+        rewrite_dir=$(mktemp -d "${TMPDIR:-/tmp}/signy.XXXXXX")
+        trap 'rm -rf "$rewrite_dir"' 0
+        trap 'exit 1' HUP INT TERM
+        for commit in $commits; do
+            signed=$(sign_commit "$commit") || die 'signing failed; branch and base unchanged; fix the cause and run signy apply again'
+            printf '%s\n' "$signed" >"$rewrite_dir/$commit"
+        done
+        base=$(cat "$rewrite_dir/$head")
+        [ "$(git symbolic-ref --quiet HEAD)" = "$branch_ref" ] || die 'checked-out branch changed while signing; run apply again'
+        git update-ref -m 'signy: sign commits' "$branch_ref" "$base" "$head" || die 'branch changed while signing; run apply again'
         git config --local "$key" "$base"
         printf 'signy: signed; base for %s advanced to %s; review and git push when ready\n' "$branch" "$base"
         ;;
