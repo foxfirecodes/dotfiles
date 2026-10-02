@@ -5,6 +5,10 @@ fundle init
 
 source (status dirname)/git-aliases.fish
 
+if test -f ~/.config/fish/local-config.fish
+    source ~/.config/fish/local-config.fish
+end
+
 if test -f /usr/share/cachyos-fish-config/cachyos-config.fish
     source /usr/share/cachyos-fish-config/cachyos-config.fish
 end
@@ -24,7 +28,11 @@ fish_add_path -g $HOME/.cargo/bin
 
 if test -d $HOME/.local/share/pnpm
     set -gx PNPM_HOME $HOME/.local/share/pnpm
-    fish_add_path -g $PNPM_HOME/bin
+    fish_add_path -g $PNPM_HOME
+end
+
+if test -d /opt/homebrew/bin
+    fish_add_path -g /opt/homebrew/bin
 end
 
 if type -q mise
