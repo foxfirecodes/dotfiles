@@ -1,0 +1,266 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+	cat <<'EOF'
+Usage: gpg-ssh HOST REPO [REPO ...]
+
+Forward the local GPG agent's extra socket to HOST and temporarily enable
+commit signing in the listed remote repositories. Keep the tunnel open for
+existing remote terminals until Ctrl-C, then restore the original settings.
+Repository paths are relative to the remote home; quote '~/' to expand there.
+
+Requires Bash, Git, GnuPG, OpenSSH, and pkill/pgrep on the remote host.
+The remote needs your public key and Git signing-key configuration already.
+This stops all gpg-agent processes owned by your remote user, so it affects
+that user's other sessions. Run only against a host you trust to use your key.
+EOF
+}
+
+die() { printf 'gpg-ssh: %s\n' "$*" >&2; exit 1; }
+
+# SSH joins arguments into a command interpreted by the remote login shell.
+# Escape quotes and backslashes outside single quotes so POSIX shells and fish
+# both preserve the input (fish also interprets backslashes in single quotes).
+quote() {
+	local value=$1 char
+	printf "'"
+	while [[ -n $value ]]; do
+		char=${value:0:1}
+		value=${value:1}
+		case $char in
+			"'") printf '%s' "'\\''" ;;
+			'\') printf '%s' "'\\\\'" ;;
+			*) printf '%s' "$char" ;;
+		esac
+	done
+	printf "'"
+}
+
+case ${1:-} in
+	-h|--help) usage; exit 0 ;;
+esac
+(($# >= 2)) || { usage >&2; exit 2; }
+host=$1
+shift
+[[ $host != -* ]] || die 'HOST cannot begin with a dash'
+for tool in ssh gpgconf mktemp; do
+	command -v "$tool" >/dev/null || die "missing local command: $tool"
+done
+
+gpgconf --launch gpg-agent
+local_socket=$(gpgconf --list-dirs agent-extra-socket)
+[[ -S $local_socket ]] || die "local extra socket is unavailable: $local_socket"
+[[ $local_socket != *:* && $local_socket != *$'\n'* ]] || die 'unsupported local socket path'
+if [[ -t 0 ]] && command -v gpg-connect-agent >/dev/null; then
+	GPG_TTY=$(tty) gpg-connect-agent updatestartuptty /bye >/dev/null
+fi
+
+work_dir=$(mktemp -d "${TMPDIR:-/tmp}/gpg-ssh.XXXXXXXX")
+control=$work_dir/ssh
+token=${work_dir##*/}
+remote_socket=
+prepared=false
+ssh_options=(-S "$control" -o ControlMaster=no -o ControlPersist=no
+	-o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o ConnectTimeout=10)
+
+# The same helper handles the remote session and a local cleanup retry. Its
+# private socket lock also holds the original settings, never private keys.
+remote_helper=$(cat <<'REMOTE'
+set -euo pipefail
+action=$1 socket=$2 token=$3
+shift 3
+lockdir=$socket.gpg-ssh
+die() { printf 'gpg-ssh: %s\n' "$*" >&2; exit 1; }
+owned() { [[ -f $lockdir/owner && $(<"$lockdir/owner") == "$token" ]]; }
+stop_agent() {
+	local status=0 attempt
+	pkill -u "$(id -u)" -x gpg-agent || status=$?
+	[[ $status == 0 || $status == 1 ]] || return "$status"
+	# Wait for agents to finish unlinking their sockets before SSH binds one.
+	for ((attempt = 0; attempt < 50; attempt++)); do
+		pgrep -u "$(id -u)" -x gpg-agent >/dev/null || return 0
+		sleep 0.1
+	done
+	printf 'gpg-ssh: remote gpg-agent did not stop\n' >&2
+	return 1
+}
+cleanup() {
+	owned || return 0
+	local entry config value status attempt cleaner failed=0 claimed=false
+	# A disconnect can trigger both the remote trap and the local retry.
+	# Serialize them so they cannot append the original values twice.
+	for ((attempt = 0; attempt < 100; attempt++)); do
+		owned || return 0
+		if mkdir -- "$lockdir/cleaning" 2>/dev/null; then
+			printf '%s\n' "$$" >"$lockdir/cleaning/pid"
+			claimed=true
+			break
+		fi
+		cleaner=
+		if [[ -f $lockdir/cleaning/pid ]]; then
+			IFS= read -r cleaner <"$lockdir/cleaning/pid" || true
+			if [[ $cleaner =~ ^[0-9]+$ ]] && ! kill -0 "$cleaner" 2>/dev/null; then
+				rm -rf -- "$lockdir/cleaning"
+			fi
+		fi
+		sleep 0.1
+	done
+	$claimed || { printf 'gpg-ssh: another cleanup is still running\n' >&2; return 1; }
+	for entry in "$lockdir"/repo.*; do
+		[[ -d $entry && -f $entry/changed ]] || continue
+		IFS= read -r -d '' config <"$entry/config" || true
+		status=0
+		git config --file "$config" --unset-all commit.gpgsign || status=$?
+		if [[ $status != 0 && $status != 5 ]]; then
+			printf 'gpg-ssh: could not restore %s\n' "$config" >&2
+			failed=1
+			continue
+		fi
+		while IFS= read -r -d '' value; do
+			git config --file "$config" --add commit.gpgsign "$value" || failed=1
+		done <"$entry/values"
+	done
+	if [[ -f $lockdir/agent-stopped ]]; then
+		stop_agent || failed=1
+		if [[ -S $socket ]]; then rm -f -- "$socket" || failed=1; fi
+	fi
+	if ((failed)); then
+		rm -rf -- "$lockdir/cleaning"
+		printf 'gpg-ssh: undo journal kept; retry with: bash %q\n' "$lockdir/restore.sh" >&2
+		return 1
+	fi
+	rm -rf -- "$lockdir"
+}
+finish() {
+	local status=$?
+	trap - EXIT HUP INT TERM
+	cleanup || { ((status)) || status=1; }
+	exit "$status"
+}
+
+case $action in
+	prepare)
+		for tool in git gpgconf pkill pgrep; do
+			command -v "$tool" >/dev/null || die "missing remote command: $tool"
+		done
+		umask 077
+		mkdir -- "$lockdir" || die "another session or undo journal exists: $lockdir"
+		printf '%s\n' "$token" >"$lockdir/owner"
+		trap finish EXIT
+		trap 'exit 129' HUP
+		trap 'exit 130' INT
+		trap 'exit 143' TERM
+		# Leave a standalone recovery command if the network goes away.
+		{
+			declare -f owned stop_agent cleanup
+			printf 'socket=%q\nlockdir=%q\ntoken=%q\ncleanup\n' "$socket" "$lockdir" "$token"
+		} >"$lockdir/restore.sh"
+		[[ ! -e $socket || -S $socket ]] || die "socket path is occupied by a file: $socket"
+		: >"$lockdir/agent-stopped"
+		stop_agent
+		rm -f -- "$socket"
+		trap - EXIT HUP INT TERM
+		;;
+	session)
+		owned || die 'remote socket lock was lost'
+		trap finish EXIT
+		trap 'exit 129' HUP
+		trap 'exit 130' INT
+		trap 'exit 143' TERM
+		[[ -S $socket ]] || die 'the forwarded socket is unavailable'
+		cd -- "$HOME"
+		configs=() repos=()
+		# Validate and snapshot every repo before changing any settings.
+		for repo in "$@"; do
+			case $repo in '~') repo=$HOME ;; '~/'*) repo=$HOME/${repo:2} ;; esac
+			repo=$(cd -- "$repo" && pwd -P) || die "repo directory is unavailable: $repo"
+			git -C "$repo" rev-parse --git-dir >/dev/null || die "not a Git repo: $repo"
+			format=$(git -C "$repo" config --get gpg.format) || {
+				status=$?; [[ $status == 1 ]] || exit "$status"; format=openpgp;
+			}
+			[[ $format == openpgp ]] || die "$repo uses gpg.format=$format, not OpenPGP"
+			signing=$(git -C "$repo" config --bool --get commit.gpgsign) || {
+				status=$?; [[ $status == 1 ]] || exit "$status"; signing=false;
+			}
+			[[ $signing != true ]] || continue
+			worktree=$(git -C "$repo" config --bool --get extensions.worktreeConfig) || {
+				status=$?; [[ $status == 1 ]] || exit "$status"; worktree=false;
+			}
+			config_name=config
+			[[ $worktree != true ]] || config_name=config.worktree
+			config=$(git -C "$repo" rev-parse --path-format=absolute --git-path "$config_name")
+			direct=$(git config --file "$config" --no-includes --bool --get commit.gpgsign) || {
+				status=$?; [[ $status == 1 ]] || exit "$status"; direct=false;
+			}
+			# Rewriting an already-true value cannot override a later include.
+			# Reject it before cleanup could change the ordering of its setting.
+			[[ $direct != true ]] || die "an included config overrides signing in $repo"
+			duplicate=false
+			for existing in "${configs[@]}"; do
+				[[ $existing != "$config" ]] || duplicate=true
+			done
+			$duplicate && continue
+			entry=$lockdir/repo.${#configs[@]}
+			mkdir -- "$entry"
+			printf '%s\0' "$config" >"$entry/config"
+			git config --file "$config" --no-includes --null --get-all commit.gpgsign >"$entry/values" || {
+				status=$?; [[ $status == 1 ]] || exit "$status";
+			}
+			configs+=("$config") repos+=("$repo")
+		done
+		for index in "${!configs[@]}"; do
+			: >"$lockdir/repo.$index/changed"
+			git config --file "${configs[index]}" --replace-all commit.gpgsign true
+			[[ $(git -C "${repos[index]}" config --bool --get commit.gpgsign) == true ]] ||
+				die "another config source overrides signing in ${repos[index]}"
+			printf 'gpg-ssh: signing enabled in %s\n' "${repos[index]}" >&2
+		done
+		printf 'gpg-ssh: tunnel ready; press Ctrl-C to restore settings and exit\n' >&2
+		while IFS= read -r _; do :; done
+		;;
+	cleanup) cleanup ;;
+	*) die "unknown remote action: $action" ;;
+esac
+REMOTE
+)
+
+remote_run() {
+	local command="bash -c $(quote "$remote_helper") --" arg
+	for arg in "$@"; do command+=" $(quote "$arg")"; done
+	ssh "${ssh_options[@]}" -o ClearAllForwardings=yes "${session_options[@]}" -- "$host" "$command"
+}
+
+cleanup() {
+	local status=$?
+	trap - EXIT HUP INT TERM
+	if $prepared; then
+		session_options=(-T -o BatchMode=yes)
+		remote_run cleanup "$remote_socket" "$token" || {
+			printf 'gpg-ssh: remote cleanup failed; recovery script: %s.gpg-ssh/restore.sh\n' "$remote_socket" >&2
+			((status)) || status=1
+		}
+	fi
+	ssh "${ssh_options[@]}" -O exit -- "$host" >/dev/null 2>&1 || true
+	rm -rf -- "$work_dir"
+	exit "$status"
+}
+trap cleanup EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+# Keep one private connection alive throughout setup, forwarding, and cleanup.
+# Clearing configured forwards here avoids creating unrelated SSH tunnels.
+ssh "${ssh_options[@]}" -M -fN -o ClearAllForwardings=yes -- "$host"
+remote_socket=$(ssh "${ssh_options[@]}" -o ClearAllForwardings=yes -T -- "$host" \
+	'gpgconf --create-socketdir && gpgconf --list-dirs agent-socket')
+[[ $remote_socket == /* && $remote_socket != *:* && $remote_socket != *$'\n'* ]] ||
+	die 'unsupported remote socket path (or unexpected login-shell output)'
+session_options=(-T)
+prepared=true
+remote_run prepare "$remote_socket" "$token"
+ssh "${ssh_options[@]}" -o ExitOnForwardFailure=yes -O forward \
+	-R "$remote_socket:$local_socket" -- "$host"
+session_options=(-tt)
+remote_run session "$remote_socket" "$token" "$@"

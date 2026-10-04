@@ -11,7 +11,11 @@ function rdeploy -a file
 
     set hostnames (grep -oE "[a-zA-Z0-9_-]*.local" ~/.ssh/config)
     for target in $hostnames
-        echo "deploying $file to $target"
-        rsync -avz $file $target:$file
+        if string match -q -- (hostname).local $target
+            echo "skipping $target"
+        else
+            echo "[$target] $file"
+            rsync -az $file $target:$file
+        end
     end
 end
