@@ -29,6 +29,7 @@ fish_add_path -g $HOME/.cargo/bin
 if test -d $HOME/.local/share/pnpm
     set -gx PNPM_HOME $HOME/.local/share/pnpm
     fish_add_path -g $PNPM_HOME
+    fish_add_path -g $PNPM_HOME/bin
 end
 
 if test -d /opt/homebrew/bin
