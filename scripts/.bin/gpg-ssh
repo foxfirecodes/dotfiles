@@ -4,13 +4,21 @@ set -euo pipefail
 usage() {
 	cat <<'EOF'
 Usage: gpg-ssh HOST REPO [REPO ...]
+       gpg-ssh --recover HOST [STATE_DIR]
 
 Forward the local GPG agent's extra socket to HOST and temporarily enable
 commit signing in the listed remote repositories. Keep the tunnel open for
 existing remote terminals until Ctrl-C, then restore the original settings.
 Repository paths are relative to the remote home; quote '~/' to expand there.
 
-Requires Bash, Git, GnuPG, OpenSSH, and pkill/pgrep on the remote host.
+--recover reads the remote undo journal and cleans up a session left behind
+after SIGKILL or a disconnect. STATE_DIR defaults to the remote agent socket
+path plus .gpg-ssh (for example /run/user/1000/gnupg/S.gpg-agent.gpg-ssh).
+It restores signing settings, stops the saved remote session, and closes its
+SSH master when recovering from the original local machine. You can also run
+bash STATE_DIR/restore.sh directly on the remote host to restore remote state.
+
+Requires Bash, Git, GnuPG, OpenSSH, and pkill/pgrep/ps on the remote host.
 The remote needs your public key and Git signing-key configuration already.
 This stops all gpg-agent processes owned by your remote user, so it affects
 that user's other sessions. Run only against a host you trust to use your key.
@@ -37,41 +45,50 @@ quote() {
 	printf "'"
 }
 
+recover=false
 case ${1:-} in
 	-h|--help) usage; exit 0 ;;
+	--recover) recover=true; shift ;;
 esac
-(($# >= 2)) || { usage >&2; exit 2; }
+if $recover; then
+	(($# >= 1 && $# <= 2)) || { usage >&2; exit 2; }
+else
+	(($# >= 2)) || { usage >&2; exit 2; }
+fi
 host=$1
 shift
 [[ $host != -* ]] || die 'HOST cannot begin with a dash'
-for tool in ssh gpgconf mktemp; do
-	command -v "$tool" >/dev/null || die "missing local command: $tool"
-done
-
-gpgconf --launch gpg-agent
-local_socket=$(gpgconf --list-dirs agent-extra-socket)
-[[ -S $local_socket ]] || die "local extra socket is unavailable: $local_socket"
-[[ $local_socket != *:* && $local_socket != *$'\n'* ]] || die 'unsupported local socket path'
-if [[ -t 0 ]] && command -v gpg-connect-agent >/dev/null; then
-	GPG_TTY=$(tty) gpg-connect-agent updatestartuptty /bye >/dev/null
-fi
-
-work_dir=$(mktemp -d "${TMPDIR:-/tmp}/gpg-ssh.XXXXXXXX")
-control=$work_dir/ssh
-token=${work_dir##*/}
-remote_socket=
-prepared=false
-ssh_options=(-S "$control" -o ControlMaster=no -o ControlPersist=no
+command -v ssh >/dev/null || die 'missing local command: ssh'
+ssh_options=(-S none -o ControlMaster=no -o ControlPersist=no
 	-o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o ConnectTimeout=10)
 
 # The same helper handles the remote session and a local cleanup retry. Its
 # private socket lock also holds the original settings, never private keys.
 remote_helper=$(cat <<'REMOTE'
 set -euo pipefail
-action=$1 socket=$2 token=$3
-shift 3
-lockdir=$socket.gpg-ssh
 die() { printf 'gpg-ssh: %s\n' "$*" >&2; exit 1; }
+action=$1
+shift
+if [[ $action == recover ]]; then
+	lockdir=${1:-}
+	if [[ -z $lockdir ]]; then
+		lockdir=$(gpgconf --list-dirs agent-socket).gpg-ssh
+	fi
+	lockdir=${lockdir%/}
+	[[ $lockdir == /*.gpg-ssh ]] || die 'STATE_DIR must be an absolute .gpg-ssh directory'
+	if [[ ! -e $lockdir ]]; then
+		printf 'gpg-ssh: no recovery state at %s\n' "$lockdir" >&2
+		exit 0
+	fi
+	[[ -d $lockdir && -O $lockdir && -f $lockdir/owner ]] || die "invalid recovery state: $lockdir"
+	socket=${lockdir%.gpg-ssh}
+	token=$(<"$lockdir/owner")
+	[[ -n $token && $token != */* && $token != *$'\n'* ]] || die 'invalid session token'
+else
+	socket=$1 token=$2
+	shift 2
+	lockdir=$socket.gpg-ssh
+fi
 owned() { [[ -f $lockdir/owner && $(<"$lockdir/owner") == "$token" ]]; }
 stop_agent() {
 	local status=0 attempt
@@ -83,6 +100,24 @@ stop_agent() {
 		sleep 0.1
 	done
 	printf 'gpg-ssh: remote gpg-agent did not stop\n' >&2
+	return 1
+}
+stop_session() {
+	local pid args attempt
+	[[ -f $lockdir/session.pid ]] || return 0
+	IFS= read -r pid <"$lockdir/session.pid" || return 1
+	[[ $pid =~ ^[1-9][0-9]*$ ]] || return 1
+	# Let an exit trap already restoring settings finish under its cleanup lock.
+	if [[ -f $lockdir/cleaning/pid && $(<"$lockdir/cleaning/pid") == "$pid" ]]; then return 0; fi
+	args=$(ps -ww -p "$pid" -o args=) || return 0
+	# A stale PID alone must never terminate an unrelated process.
+	[[ $args == *" -- session $socket $token "* || $args == *" -- session $socket $token" ]] || return 0
+	kill -TERM "$pid" 2>/dev/null || return 0
+	for ((attempt = 0; attempt < 100; attempt++)); do
+		kill -0 "$pid" 2>/dev/null || return 0
+		sleep 0.1
+	done
+	printf 'gpg-ssh: saved remote session has not exited; retry recovery\n' >&2
 	return 1
 }
 cleanup() {
@@ -141,7 +176,7 @@ finish() {
 
 case $action in
 	prepare)
-		for tool in git gpgconf pkill pgrep; do
+		for tool in git gpgconf pkill pgrep ps; do
 			command -v "$tool" >/dev/null || die "missing remote command: $tool"
 		done
 		umask 077
@@ -151,10 +186,11 @@ case $action in
 		trap 'exit 129' HUP
 		trap 'exit 130' INT
 		trap 'exit 143' TERM
+		printf '%s\n' "$1" >"$lockdir/local-control"
 		# Leave a standalone recovery command if the network goes away.
 		{
-			declare -f owned stop_agent cleanup
-			printf 'socket=%q\nlockdir=%q\ntoken=%q\ncleanup\n' "$socket" "$lockdir" "$token"
+			declare -f owned stop_agent stop_session cleanup
+			printf 'socket=%q\nlockdir=%q\ntoken=%q\nstop_session && cleanup\n' "$socket" "$lockdir" "$token"
 		} >"$lockdir/restore.sh"
 		[[ ! -e $socket || -S $socket ]] || die "socket path is occupied by a file: $socket"
 		: >"$lockdir/agent-stopped"
@@ -168,6 +204,7 @@ case $action in
 		trap 'exit 129' HUP
 		trap 'exit 130' INT
 		trap 'exit 143' TERM
+		printf '%s\n' "$$" >"$lockdir/session.pid"
 		[[ -S $socket ]] || die 'the forwarded socket is unavailable'
 		cd -- "$HOME"
 		configs=() repos=()
@@ -219,6 +256,17 @@ case $action in
 		printf 'gpg-ssh: tunnel ready; press Ctrl-C to restore settings and exit\n' >&2
 		while IFS= read -r _; do :; done
 		;;
+	recover)
+		control=
+		if [[ -f $lockdir/local-control ]]; then
+			IFS= read -r control <"$lockdir/local-control" || true
+		fi
+		# Capture metadata before the old session's exit trap removes the journal.
+		stop_session
+		cleanup
+		printf '%s\n%s\n' "$control" "$token"
+		printf 'gpg-ssh: recovered remote state at %s\n' "$lockdir" >&2
+		;;
 	cleanup) cleanup ;;
 	*) die "unknown remote action: $action" ;;
 esac
@@ -230,6 +278,49 @@ remote_run() {
 	for arg in "$@"; do command+=" $(quote "$arg")"; done
 	ssh "${ssh_options[@]}" -o ClearAllForwardings=yes "${session_options[@]}" -- "$host" "$command"
 }
+
+if $recover; then
+	session_options=(-T)
+	recovery_info=$(remote_run recover "${1:-}")
+	{
+		IFS= read -r control || true
+		IFS= read -r token || true
+	} <<<"$recovery_info"
+	if [[ -z $control && $token =~ ^gpg-ssh\.[[:alnum:]]+$ ]]; then
+		# Journals created before --recover did not save the local control path.
+		for temp_root in "${TMPDIR:-/tmp}" /tmp; do
+			if [[ -S $temp_root/$token/ssh ]]; then control=$temp_root/$token/ssh; break; fi
+		done
+	fi
+	if [[ -n $control ]]; then
+		[[ $token =~ ^gpg-ssh\.[[:alnum:]]+$ && $control == /*/"$token"/ssh ]] ||
+			die 'invalid saved local SSH control path'
+		if [[ -S $control ]]; then
+			ssh -S "$control" -o ControlMaster=no -O exit -- "$host" >/dev/null 2>&1 ||
+				die "remote state restored, but could not close SSH master: $control"
+		fi
+		rmdir -- "${control%/ssh}" 2>/dev/null || true
+	fi
+	exit 0
+fi
+
+for tool in gpgconf mktemp; do
+	command -v "$tool" >/dev/null || die "missing local command: $tool"
+done
+gpgconf --launch gpg-agent
+local_socket=$(gpgconf --list-dirs agent-extra-socket)
+[[ -S $local_socket ]] || die "local extra socket is unavailable: $local_socket"
+[[ $local_socket != *:* && $local_socket != *$'\n'* ]] || die 'unsupported local socket path'
+if [[ -t 0 ]] && command -v gpg-connect-agent >/dev/null; then
+	GPG_TTY=$(tty) gpg-connect-agent updatestartuptty /bye >/dev/null
+fi
+work_dir=$(mktemp -d "${TMPDIR:-/tmp}/gpg-ssh.XXXXXXXX")
+control=$work_dir/ssh
+[[ $control != *$'\n'* ]] || { rmdir -- "$work_dir"; die 'unsupported local temporary directory'; }
+token=${work_dir##*/}
+remote_socket=
+prepared=false
+ssh_options[1]=$control
 
 cleanup() {
 	local status=$?
@@ -259,7 +350,7 @@ remote_socket=$(ssh "${ssh_options[@]}" -o ClearAllForwardings=yes -T -- "$host"
 	die 'unsupported remote socket path (or unexpected login-shell output)'
 session_options=(-T)
 prepared=true
-remote_run prepare "$remote_socket" "$token"
+remote_run prepare "$remote_socket" "$token" "$control"
 ssh "${ssh_options[@]}" -o ExitOnForwardFailure=yes -O forward \
 	-R "$remote_socket:$local_socket" -- "$host"
 session_options=(-tt)
