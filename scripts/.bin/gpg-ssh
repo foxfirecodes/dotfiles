@@ -18,7 +18,7 @@ It restores signing settings, stops the saved remote session, and closes its
 SSH master when recovering from the original local machine. You can also run
 bash STATE_DIR/restore.sh directly on the remote host to restore remote state.
 
-Requires Bash, Git, GnuPG, OpenSSH, and pkill/pgrep/ps on the remote host.
+Requires Bash, Git, GnuPG, OpenSSH, and flock/pkill/pgrep/ps on the remote host.
 The remote needs your public key and Git signing-key configuration already.
 This stops all gpg-agent processes owned by your remote user, so it affects
 that user's other sessions. Run only against a host you trust to use your key.
@@ -122,26 +122,46 @@ stop_session() {
 }
 cleanup() {
 	owned || return 0
-	local entry config value status attempt cleaner failed=0 claimed=false
-	# A disconnect can trigger both the remote trap and the local retry.
-	# Serialize them so they cannot append the original values twice.
+	local entry config value status attempt cleaner args cleanup_fd failed=0
+	# Kernel locks disappear on exit, including SIGKILL; mkdir locks can leave
+	# an empty directory if interrupted before publishing the owner's PID.
+	exec {cleanup_fd}>"$lockdir/cleanup.lock" || { owned || return 0; return 1; }
+	flock -w 10 "$cleanup_fd" || {
+		printf 'gpg-ssh: another cleanup is still running\n' >&2
+		exec {cleanup_fd}>&-
+		return 1
+	}
+	owned || { exec {cleanup_fd}>&-; return 0; }
+	# Older helpers used cleaning/pid. Wait for a matching live helper, but
+	# recover missing PIDs and PIDs reused by unrelated processes.
 	for ((attempt = 0; attempt < 100; attempt++)); do
-		owned || return 0
-		if mkdir -- "$lockdir/cleaning" 2>/dev/null; then
-			printf '%s\n' "$$" >"$lockdir/cleaning/pid"
-			claimed=true
-			break
-		fi
-		cleaner=
+		[[ -d $lockdir/cleaning ]] || break
+		cleaner= args=
 		if [[ -f $lockdir/cleaning/pid ]]; then
 			IFS= read -r cleaner <"$lockdir/cleaning/pid" || true
-			if [[ $cleaner =~ ^[0-9]+$ ]] && ! kill -0 "$cleaner" 2>/dev/null; then
+		fi
+		if [[ $cleaner =~ ^[1-9][0-9]*$ ]]; then
+			args=$(ps -ww -p "$cleaner" -o args=) || args=
+		fi
+		if [[ $args != *" -- session $socket $token"* &&
+		      $args != *" -- cleanup $socket $token"* &&
+		      $args != *" -- prepare $socket $token"* &&
+		      $args != *" -- recover "* &&
+		      $args != *"$lockdir/restore.sh"* ]]; then
+			# Allow an old helper time to publish its PID after mkdir.
+			if [[ -n $cleaner || $attempt == 99 ]]; then
 				rm -rf -- "$lockdir/cleaning"
+				break
 			fi
 		fi
 		sleep 0.1
 	done
-	$claimed || { printf 'gpg-ssh: another cleanup is still running\n' >&2; return 1; }
+	owned || { exec {cleanup_fd}>&-; return 0; }
+	if [[ -d $lockdir/cleaning ]]; then
+		printf 'gpg-ssh: another cleanup is still running\n' >&2
+		exec {cleanup_fd}>&-
+		return 1
+	fi
 	for entry in "$lockdir"/repo.*; do
 		[[ -d $entry && -f $entry/changed ]] || continue
 		IFS= read -r -d '' config <"$entry/config" || true
@@ -161,11 +181,12 @@ cleanup() {
 		if [[ -S $socket ]]; then rm -f -- "$socket" || failed=1; fi
 	fi
 	if ((failed)); then
-		rm -rf -- "$lockdir/cleaning"
+		exec {cleanup_fd}>&-
 		printf 'gpg-ssh: undo journal kept; retry with: bash %q\n' "$lockdir/restore.sh" >&2
 		return 1
 	fi
 	rm -rf -- "$lockdir"
+	exec {cleanup_fd}>&-
 }
 finish() {
 	local status=$?
@@ -176,7 +197,7 @@ finish() {
 
 case $action in
 	prepare)
-		for tool in git gpgconf pkill pgrep ps; do
+		for tool in git gpgconf flock pkill pgrep ps; do
 			command -v "$tool" >/dev/null || die "missing remote command: $tool"
 		done
 		umask 077
