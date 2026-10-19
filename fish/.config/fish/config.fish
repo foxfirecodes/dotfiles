@@ -50,6 +50,6 @@ end
 
 function fish_greeting
     if type -q fastfetch
-        fastfetch --color magenta --logo-color-1 red --logo-color-2 yellow --logo-position right
+        fastfetch
     end
 end

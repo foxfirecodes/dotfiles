@@ -106,6 +106,6 @@ else
   fi
 fi
 
-default_stows=(zsh scripts tmux git nvim)
+default_stows=(zsh scripts tmux git nvim fastfetch fish)
 echo "installing default stows: ${default_stows[@]}"
 ./stow.sh "${default_stows[@]}"
